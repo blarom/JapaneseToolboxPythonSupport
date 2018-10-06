@@ -7,6 +7,7 @@ from keys import serviceAccount
 from openpyxl import Workbook
 from collections import namedtuple
 
+#region Initializing the Database
 config = {
     "apiKey": apiKey,
     "authDomain": "japanese-toolbox.firebaseapp.com",
@@ -14,13 +15,10 @@ config = {
     "storageBucket": "japanese-toolbox.appspot.com",
     "serviceAccount": serviceAccount
 }
-
 firebase = pyrebase.initialize_app(config)
-
 db = firebase.database()
 
-jishoWordsList = db.child("wordsList").get()
-
+jishoWordsListFromFirebase = db.child("wordsList").get()
 
 # Defining the word class that maps the relevant json input to values in the class
 class Word(object):
@@ -44,13 +42,14 @@ class Word(object):
                 data = json.loads(json_content)
                 for key, value in data.items():
                     self.__dict__[key] = value
+#endregion
 
-
+#region Getting the Excel sheets and their sizes
 # Preparing the excel sheet for writing
 localWordsWorkbook = openpyxl.load_workbook(
-    filename='C:/Users/Bar/Dropbox/Japanese/JapaneseToolbox/Grammar - 3000 kanji - for pyrebase.xlsx', data_only=True)
+    filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
 localVerbsWorkbook = openpyxl.load_workbook(
-    filename='C:/Users/Bar/Dropbox/Japanese/JapaneseToolbox/Verbs - 3000 kanji - for pyrebase.xlsx', data_only=True)
+    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
 
 # assign_sheet=wb.active
 wsLocalMeanings = localWordsWorkbook["Meanings"]
@@ -58,7 +57,6 @@ wsLocalTypes = localWordsWorkbook["Types"]
 wsLocalGrammar = localWordsWorkbook["Grammar"]
 wsLocalVerbsForGrammar = localVerbsWorkbook["VerbsForGrammar"]
 wsLocalVerbs = localVerbsWorkbook["Verbs"]
-
 
 # Getting the size of the Local Types list
 lastLocalTypesIndex = 1
@@ -89,6 +87,19 @@ while True:
         break
     lastLocalMeaningsIndex += 1
 
+# Getting the size of the Local Verbs list
+lastLocalVerbsIndex = 1
+while True:
+    value = wsLocalVerbs.cell(row=lastLocalVerbsIndex, column=3).value
+    value2 = wsLocalVerbs.cell(row=lastLocalVerbsIndex+1, column=3).value
+    value3 = wsLocalVerbs.cell(row=lastLocalVerbsIndex+2, column=3).value
+    if (not value) & (not value2) & (not value3):
+        lastLocalVerbsIndex -= 1
+        break
+    lastLocalVerbsIndex += 1
+#endregion
+
+#region Defining the helper classes & methods for the database integration
 
 def getJTType(jishoType):
     if jishoType == "Adverb": return "A"
@@ -127,6 +138,9 @@ def getJTType(jishoType):
     elif "Godan verb with su" in jishoType:
         if "Transitive" in jishoType: return "VsuT"
         else: return "VsuI"
+    elif "Godan verb with tsu" in jishoType:
+        if "Transitive" in jishoType: return "VtsuT"
+        else: return "VtsuI"
     elif "Godan verb with u" in jishoType:
         if "Transitive" in jishoType: return "VuT"
         else: return "VuI"
@@ -255,14 +269,15 @@ class JishoWord(object):
             self.meaning = meaning
             self.grammarType = grammarType
             self.grammarTypeForSheets = grammarTypeForSheets
+#endregion
 
+#region Creating the JishoWord list to be used in the integrator
 
-# Getting the values in the current word and creating the JishoWord list
 jishoWords = []
-for wordKey in jishoWordsList.val():
+for wordKey in jishoWordsListFromFirebase.val():
 
     # Getting the Jisho word's characteristics
-    word = jishoWordsList.val()[wordKey]
+    word = jishoWordsListFromFirebase.val()[wordKey]
     wordObject = Word(json.dumps(word))
 
     meanings = []
@@ -279,9 +294,9 @@ for wordKey in jishoWordsList.val():
     # Creating the local word object
     jishoWord = JishoWord(wordObject.romaji, wordObject.kanji, wordObject.altSpellings, meanings)
     jishoWords.append(jishoWord)
+#endregion
 
-
-# Iterating on the JishoWord list
+#region Iterating on the JishoWord list to integrate the words in the local sheets
 jishoWordIndex = 0
 while jishoWordIndex < len(jishoWords):
 
@@ -682,9 +697,11 @@ while jishoWordIndex < len(jishoWords):
 
 
     jishoWordIndex += 1
+#endregion
 
-
+#region Saving the results
 localWordsWorkbook.save(
-    filename='C:/Users/Bar/Dropbox/Japanese/JapaneseToolbox/Grammar - 3000 kanji - for pyrebase - updated.xlsx')
+    filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - updated with firebase results.xlsx')
 localVerbsWorkbook.save(
-    filename='C:/Users/Bar/Dropbox/Japanese/JapaneseToolbox/Verbs - 3000 kanji - for pyrebase - updated.xlsx')
+    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - updated with firebase results.xlsx')
+#endregion
