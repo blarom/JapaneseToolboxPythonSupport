@@ -2,8 +2,7 @@
 
 import openpyxl
 
-
-#region Getting the Excel sheets and their sizes
+# region Getting the Excel sheets and their sizes
 # Preparing the excel sheet for writing
 localWordsWorkbook = openpyxl.load_workbook(
     filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - updated with firebase results.xlsx', data_only=True)
@@ -30,15 +29,15 @@ while True:
 lastLocalVerbsIndex = 1
 while True:
     value = wsLocalVerbs.cell(row=lastLocalVerbsIndex, column=3).value
-    value2 = wsLocalVerbs.cell(row=lastLocalVerbsIndex+1, column=3).value
-    value3 = wsLocalVerbs.cell(row=lastLocalVerbsIndex+2, column=3).value
+    value2 = wsLocalVerbs.cell(row=lastLocalVerbsIndex + 1, column=3).value
+    value3 = wsLocalVerbs.cell(row=lastLocalVerbsIndex + 2, column=3).value
     if (not value) & (not value2) & (not value3):
         lastLocalVerbsIndex -= 1
         break
     lastLocalVerbsIndex += 1
-#endregion
+# endregion
 
-#region Moving the suru verb results from the Grammar/Types to the Verbs/Verbs sheet
+# region Moving the suru verb results from the Grammar/Types to the Verbs/Verbs sheet
 typesSheetIndex = lastLocalTypesIndex
 verbSheetIndex = lastLocalVerbsIndex
 while " suru" in wsLocalTypes.cell(row=typesSheetIndex, column=3).value:
@@ -66,8 +65,16 @@ while " suru" in wsLocalTypes.cell(row=typesSheetIndex, column=3).value:
         meaningIndexValue = int(meaningIndexStrings[index])
         currentMeaning = str(wsLocalMeanings.cell(row=meaningIndexValue, column=2).value).strip().replace("\u200b", "")
         currentType = str(wsLocalMeanings.cell(row=meaningIndexValue, column=3).value).strip().replace("\u200b", "")
-        if index>0: combinedMeanings += ", "
-        combinedMeanings += currentMeaning
+
+        # Removing empty meanings from the indexes
+        if not currentMeaning or currentMeaning == "":
+            meanings = meanings.replace(meaningIndexStrings[index] + ";", ";")
+            meanings = meanings.replace(";" + meaningIndexStrings[index], ";")
+
+        # Otherwise, adding the meaning to the lot
+        else:
+            if index > 0: combinedMeanings += ", "
+            combinedMeanings += currentMeaning
 
     wsLocalVerbs.cell(row=verbSheetIndex, column=2).value = combinedMeanings
     wsLocalVerbs.cell(row=verbSheetIndex, column=3).value = currentType[-1]
@@ -78,12 +85,12 @@ while " suru" in wsLocalTypes.cell(row=typesSheetIndex, column=3).value:
     typesSheetIndex -= 1
     verbSheetIndex += 1
 
-#wsLocalVerbs.cell(row=verbSheetIndex, column=1).value = "-"
-#wsLocalVerbs.cell(row=verbSheetIndex, column=2).value = "-"
-#wsLocalVerbs.cell(row=verbSheetIndex, column=3).value = "-"
-#endregion
+# wsLocalVerbs.cell(row=verbSheetIndex, column=1).value = "-"
+# wsLocalVerbs.cell(row=verbSheetIndex, column=2).value = "-"
+# wsLocalVerbs.cell(row=verbSheetIndex, column=3).value = "-"
+# endregion
 
-#region Moving the regular verbs from the Grammar/Types to the Verbs/Verbs sheet
+# region Moving the regular verbs from the Grammar/Types to the Verbs/Verbs sheet and removing unused meaning indexes
 while not wsLocalTypes.cell(row=typesSheetIndex, column=2).value:
 
     romaji = str(wsLocalTypes.cell(row=typesSheetIndex, column=3).value)
@@ -99,8 +106,19 @@ while not wsLocalTypes.cell(row=typesSheetIndex, column=2).value:
         meaningIndexValue = int(meaningIndexStrings[index])
         currentMeaning = str(wsLocalMeanings.cell(row=meaningIndexValue, column=2).value).strip().replace("\u200b", "")
         currentType = str(wsLocalMeanings.cell(row=meaningIndexValue, column=3).value).strip().replace("\u200b", "")
-        if index>0: combinedMeanings += ", "
-        combinedMeanings += currentMeaning
+
+        # Removing empty meanings from the indexes
+        if not currentMeaning or currentMeaning == "":
+            meanings = meanings.replace(meaningIndexStrings[index] + ";", ";")
+            meanings = meanings.replace(";" + meaningIndexStrings[index], ";")
+
+        # Otherwise, adding the meaning to the lot
+        else:
+            if index > 0: combinedMeanings += ", "
+            combinedMeanings += currentMeaning
+
+    # If indexes were removed from the meanings, then update the value in the sheet
+    wsLocalTypes.cell(row=typesSheetIndex, column=5).value = meanings
 
     family = ""
     romajiRoot = ""
@@ -142,6 +160,7 @@ while not wsLocalTypes.cell(row=typesSheetIndex, column=2).value:
         wsLocalVerbs.cell(row=verbSheetIndex, column=7).value = romaji
         wsLocalVerbs.cell(row=verbSheetIndex, column=6).value = kanji
         wsLocalVerbs.cell(row=verbSheetIndex, column=8).value = kanji[:-1]
+        wsLocalVerbs.cell(row=verbSheetIndex, column=9).value = romajiRoot
         wsLocalVerbs.cell(row=verbSheetIndex, column=12).value = meanings
         wsLocalVerbs.cell(row=verbSheetIndex, column=11).value = altSpellings
         if currentType[-1] == "T": wsLocalVerbs.cell(row=verbSheetIndex, column=4).value = "を"
@@ -154,12 +173,12 @@ while not wsLocalTypes.cell(row=typesSheetIndex, column=2).value:
 wsLocalVerbs.cell(row=verbSheetIndex, column=1).value = "-"
 wsLocalVerbs.cell(row=verbSheetIndex, column=2).value = "-"
 wsLocalVerbs.cell(row=verbSheetIndex, column=3).value = "-"
-#endregion
+# endregion
 
 
-#region Saving the results
+# region Saving the results
 localWordsWorkbook.save(
     filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - updated with firebase results.xlsx')
 localVerbsWorkbook.save(
     filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - updated with firebase results.xlsx')
-#endregion
+# endregion
