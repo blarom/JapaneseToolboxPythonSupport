@@ -239,6 +239,42 @@ while (not wsLocalTypes.cell(row=typesSheetIndex, column=4).value == "") and (ws
         meanings = meanings.replace(meaningIndexStrings[0] + ";", "")
         wsLocalTypes.cell(row=typesSheetIndex, column=5).value = meanings
 
+        # Transferring the details from the older meaning being cancelled to the first available new meaning (ie. skipping the older ones), unless it already has details
+        explanations = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=4).value)
+        rules = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=5).value)
+        example = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=6).value)
+        opposite = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=7).value)
+        synonym = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=8).value)
+
+        if ((explanations == '' or explanations is None or explanations == 'None')
+                and (rules == '' or rules is None or rules == 'None')
+                and (example == '' or example is None or example == 'None')
+                and (opposite == '' or opposite is None or opposite == 'None')
+                and (synonym == '' or synonym is None or synonym == 'None')):
+            pass
+        else:
+            for i in range(1, len(meaningIndexStrings)):
+                # If the next meaning index is consecutive to the older meaning, then it's also an old meaning, so skip it
+                if int(meaningIndexStrings[i]) == int(meaningIndexStrings[0])+i:
+                    continue
+                else:
+                    explanationsNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=4).value)
+                    rulesNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=5).value)
+                    exampleNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=6).value)
+                    oppositeNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=7).value)
+                    synonymNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=8).value)
+                    if ((explanationsNew == '' or explanationsNew is None or explanationsNew == 'None')
+                            and (rulesNew == '' or rulesNew is None or rulesNew == 'None')
+                            and (exampleNew == '' or exampleNew is None or exampleNew == 'None')
+                            and (oppositeNew == '' or oppositeNew is None or oppositeNew == 'None')
+                            and (synonymNew == '' or synonymNew is None or synonymNew == 'None')):
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=4).value = explanationsNew
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=5).value = rulesNew
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=6).value = exampleNew
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=7).value = oppositeNew
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=8).value = synonymNew
+                    break
+
     typesSheetIndex += 1
 # endregion
 
@@ -292,6 +328,42 @@ while wsLocalVerbs.cell(row=verbsSheetIndex, column=1).value != "-"\
         wsLocalMeanings.cell(row=olderMeaningIndexValue, column=3).value = '-'
         meanings = meanings.replace(meaningIndexStrings[0] + ";", "")
         wsLocalVerbs.cell(row=verbsSheetIndex, column=12).value = meanings
+
+        # Transferring the details from the older meaning being cancelled to the first available new meaning (ie. skipping the older ones), unless it already has details
+        explanations = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=4).value)
+        rules = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=5).value)
+        example = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=6).value)
+        opposite = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=7).value)
+        synonym = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=8).value)
+
+        if ((explanations == '' or explanations is None or explanations == 'None')
+                and (rules == '' or rules is None or rules == 'None')
+                and (example == '' or example is None or example == 'None')
+                and (opposite == '' or opposite is None or opposite == 'None')
+                and (synonym == '' or synonym is None or synonym == 'None')):
+            pass
+        else:
+            for i in range(1, len(meaningIndexStrings)):
+                # If the next meaning index is consecutive to the older meaning, then it's also an old meaning, so skip it
+                if int(meaningIndexStrings[i]) == int(meaningIndexStrings[0])+i:
+                    continue
+                else:
+                    explanationsNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=4).value)
+                    rulesNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=5).value)
+                    exampleNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=6).value)
+                    oppositeNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=7).value)
+                    synonymNew = str(wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=8).value)
+                    if ((explanationsNew == '' or explanationsNew is None or explanationsNew == 'None')
+                            and (rulesNew == '' or rulesNew is None or rulesNew == 'None')
+                            and (exampleNew == '' or exampleNew is None or exampleNew == 'None')
+                            and (oppositeNew == '' or oppositeNew is None or oppositeNew == 'None')
+                            and (synonymNew == '' or synonymNew is None or synonymNew == 'None')):
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=4).value = explanationsNew
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=5).value = rulesNew
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=6).value = exampleNew
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=7).value = oppositeNew
+                        wsLocalMeanings.cell(row=int(meaningIndexStrings[i]), column=8).value = synonymNew
+                    break
 
     verbsSheetIndex += 1
 # endregion
