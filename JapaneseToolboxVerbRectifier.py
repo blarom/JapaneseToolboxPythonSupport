@@ -187,17 +187,22 @@ wsLocalVerbs.cell(row=verbSheetIndex, column=3).value = "-"
 
 # region Minimizing older meanings in the types sheet
 typesSheetIndex = 2
-while not wsLocalTypes.cell(row=typesSheetIndex, column=4).value == "" and wsLocalTypes.cell(row=typesSheetIndex, column=4).value is not None:
+while (not wsLocalTypes.cell(row=typesSheetIndex, column=4).value == "") and (wsLocalTypes.cell(row=typesSheetIndex, column=4).value is not None):
 
-    meanings = str(wsLocalVerbs.cell(row=typesSheetIndex, column=12).value)
+    meanings = str(wsLocalTypes.cell(row=typesSheetIndex, column=5).value)
     if meanings == 'None' or meanings == '' or meanings is None:
         typesSheetIndex += 1
         continue
 
     meaningIndexStrings = meanings.split(";")
     olderMeaningIndexValue = int(meaningIndexStrings[0])
-    source = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=9).value)
-    if source == 'J':
+    olderMeaningSource = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=9).value)
+    if olderMeaningSource == 'J':
+        typesSheetIndex += 1
+        continue
+
+    meaningType = str(wsLocalMeanings.cell(row=olderMeaningIndexValue, column=3).value)
+    if meaningType == 'PC':
         typesSheetIndex += 1
         continue
 
