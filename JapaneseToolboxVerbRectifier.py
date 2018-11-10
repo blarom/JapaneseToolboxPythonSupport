@@ -150,10 +150,10 @@ while not wsLocalTypes.cell(row=typesSheetIndex, column=2).value:
     elif kanji[-1] == "ぬ":
         family = "nu godan"
         romajiRoot = romaji[:-2]
-    elif kanji[-1] == "る" and "rui" in currentType:
+    elif kanji[-1] == "る" and "rug" in currentType:
         family = "ru godan"
         romajiRoot = romaji[:-2]
-    elif kanji[-1] == "る" and "rug" in currentType:
+    elif kanji[-1] == "る" and "rui" in currentType:
         family = "ru ichidan"
         romajiRoot = romaji[:-2]
     elif kanji[-1] == "つ":
