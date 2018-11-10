@@ -25,7 +25,7 @@ jishoWordsListFromFirebase = db.child("wordsList").get()
 class Word(object):
     romaji = ""
     kanji = ""
-    altSpellings = ""
+    fixedJishoWordAltSpellings = ""
 
     def __init__(self, json_content):
         data = json.loads(json_content)
@@ -376,7 +376,7 @@ def getJTType(jishoType):
 class JishoWord(object):
     romaji = ""
     kanji = ""
-    altSpellings = ""
+    fixedJishoWordAltSpellings = ""
     meanings = []
 
     def __init__(self, romaji, kanji, altSpellings, meanings):
@@ -428,10 +428,11 @@ while jishoWordIndex < len(jishoWords):
 
     jishoWord = jishoWords[jishoWordIndex]
 
-    # Getting the Jisho word's characteristics
+    # region Getting the Jisho word's characteristics
     jishoWordRomaji = jishoWord.romaji
     jishoWordKanji = jishoWord.kanji
-    jishoWordAltSpellings = jishoWord.altSpellings
+    jishoWordAltSpellings = str(jishoWord.altSpellings)
+    suruJishoWordAltSpellings = ", ".join([element.strip() + "する" for element in jishoWordAltSpellings.split(",")])
 
     jishoWordMeaningObjects = jishoWord.meanings
     jishoWordMeaningsOriginalList = []
@@ -441,19 +442,21 @@ while jishoWordIndex < len(jishoWords):
         jishoWordMeaningsOriginalList.append(jishoWordMeaningObject.meaning)
         jishoWordMeaningTypesOriginalList.append(jishoWordMeaningObject.grammarType)
         jishoWordTypesForSheetsOriginalList.append(jishoWordMeaningObject.grammarTypeForSheets)
+    # endregion
 
-    # Looping through the meanings to create the meanings/types/typesForSheet lists
+    # region Looping through the meanings to create the meanings/types/typesForSheet lists, and updating altSpellings for suru verbs
     jishoWordMeanings = []
     jishoWordMeaningTypes = []
     jishoWordTypesForSheets = []
     for jishoWordMeaningIndex in range(len(jishoWordMeaningsOriginalList)):
 
-        # Getting the object meaning parameters
+        # region Getting the object meaning parameters
         jishoWordMeaningString = jishoWordMeaningsOriginalList[jishoWordMeaningIndex]
         jishoTypesString = jishoWordMeaningTypesOriginalList[jishoWordMeaningIndex]
         jishoWordTypeForSheet = jishoWordTypesForSheetsOriginalList[jishoWordMeaningIndex]
+        # endregion
 
-        # Checking for critical attributes
+        # region Checking for critical attributes
         if "Transitive verb" in jishoTypesString:
             isTransitive = True
         else:
@@ -468,12 +471,14 @@ while jishoWordIndex < len(jishoWords):
             isDeclaredAsAdverb = True
         else:
             isDeclaredAsAdverb = False
+        # endregion
 
-        # Cycling over the jishoType elements and creating the jisho word's meanings array accordingly
+        # region Cycling over the jishoType elements and creating the jisho word's meanings array accordingly
+        # Also: updating or creating the suru verbs as necessary
         typeElements = jishoTypesString.split(",")
         for jishoTypeIndex in range(len(typeElements)):
 
-            # Convert the Jisho type to the Japanese Toolbox type
+            # region Converting the Jisho type to the Japanese Toolbox type
             jishoType = typeElements[jishoTypeIndex].strip()
 
             if ("verb" in jishoType) & ("ransitive" in jishoType):
@@ -506,15 +511,38 @@ while jishoWordIndex < len(jishoWords):
             jTType = getJTType(jishoType)
 
             if jTType == "": continue
+            # endregion
 
-            # If the word is a verb, remove the "to "
+            # region If the word is a verb then remove the "to ", and add the suru verbs to the list of Jisho Words if relevant
             if len(jishoType) > 2:
-                if ((jTType == "VsuruT") | (jTType == "VsuruI")) & (" suru" not in jishoWordRomaji) & (
-                        "ssuru" not in jishoWordRomaji):
-                    newMeanings = []
-                    newMeanings.append(JishoWord.Meaning(jishoWordMeaningString, jTType, "V"))
-                    newJishoWord = JishoWord(jishoWordRomaji + " suru", jishoWordKanji + "する", "", newMeanings)
-                    jishoWords.append(newJishoWord)
+                if ((jTType == "VsuruT") | (jTType == "VsuruI"))\
+                        and (" suru" not in jishoWordRomaji)\
+                        and ("ssuru" not in jishoWordRomaji):
+
+                    newMeanings = [JishoWord.Meaning(jishoWordMeaningString, jTType, "V")]
+
+                    # Check if the suru verb is already in the list of verbs, and if not then add it
+                    tempVerbSheetIndex = lastLocalVerbsIndex-1
+                    isInSuruList = False
+
+                    while "suru" in str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=7).value):
+                        currentLocalRomaji = str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=7).value)
+                        currentLocalKanji = str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=6).value)
+                        currentLocalAltSpellings = str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=11).value)
+
+                        if jishoWordKanji in currentLocalKanji and jishoWordRomaji in currentLocalRomaji:
+                            isInSuruList = True
+                            break
+
+                        if currentLocalRomaji == "" or currentLocalRomaji == "None":
+                            break
+
+                        tempVerbSheetIndex -= 1
+
+                    if not isInSuruList:
+                        newJishoWord = JishoWord(jishoWordRomaji + " suru", jishoWordKanji + "する", jishoWordAltSpellings, newMeanings)
+                        jishoWords.append(newJishoWord)
+
                 elif ((jTType == "VsuruT") | (jTType == "VsuruI")) & ("ssuru" not in jishoWordRomaji):
                     jishoWordTypesForSheets.append("V")
                     jishoWordMeaningTypes.append(jTType)
@@ -538,6 +566,10 @@ while jishoWordIndex < len(jishoWords):
                 jishoWordTypesForSheets.append("O")
                 jishoWordMeaningTypes.append(jTType)
                 jishoWordMeanings.append(jishoWordMeaningString)
+            # endregion
+
+        # endregion
+    # endregion
 
     wordAlreadyExists = False
 
@@ -551,12 +583,24 @@ while jishoWordIndex < len(jishoWords):
         currentLocalRomaji = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=3).value)
         currentLocalKanji = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=4).value)
         currentLocalMeaningIndexes = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=5).value)
+        currentLocalAltSpellings = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=6).value)
 
         # Once the identical local entry is found, find the meanings that are unique to the Jisho word, and add them to the database
         if (currentLocalRomaji == jishoWordRomaji) & (currentLocalKanji == jishoWordKanji):
 
             wordAlreadyExists = True
 
+            # Updating the altSpellings
+            if currentLocalAltSpellings == "" or currentLocalAltSpellings == "None":
+                wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=6).value = jishoWordAltSpellings
+            else:
+                currentLocalAltSpellingsList = [element.strip() for element in currentLocalAltSpellings.split(",")]
+                for jishoWordAltSpelling in jishoWordAltSpellings.split(","):
+                    if jishoWordAltSpelling not in currentLocalAltSpellings:
+                        currentLocalAltSpellingsList.append(jishoWordAltSpelling)
+                wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=6).value = ', '.join(currentLocalAltSpellingsList)
+
+            # Updating the meanings
             localMeaningIndexes = currentLocalMeaningIndexes.split(";")
             localMeaningLoopIndex = 0
             while localMeaningLoopIndex < len(localMeaningIndexes):
@@ -633,6 +677,7 @@ while jishoWordIndex < len(jishoWords):
         currentLocalRomaji = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=7).value)
         currentLocalKanji = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=6).value)
         currentLocalMeaningIndexes = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=12).value)
+        currentLocalAltSpellings = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=11).value)
 
         # Once the identical local entry is found, find the meanings that are unique to the Jisho word, and add them to the database
         if ((currentLocalRomaji == jishoWordRomaji) | (currentLocalRomaji == (jishoWordRomaji + " suru"))) \
@@ -640,6 +685,21 @@ while jishoWordIndex < len(jishoWords):
 
             wordAlreadyExists = True
 
+            print("suruJishoWordAltSpellings:" + suruJishoWordAltSpellings)
+
+            # Updating the altSpellings
+            if currentLocalAltSpellings == "" or currentLocalAltSpellings == "None":
+                wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=11).value = suruJishoWordAltSpellings
+            else:
+                currentLocalAltSpellingsList = [element.strip() for element in currentLocalAltSpellings.split(",")]
+                for jishoWordAltSpelling in suruJishoWordAltSpellings.split(","):
+                    if jishoWordAltSpelling not in currentLocalAltSpellings:
+                        currentLocalAltSpellingsList.append(jishoWordAltSpelling)
+                print("currentLocalAltSpellingsList:" + str(currentLocalAltSpellingsList))
+
+                wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=11).value = ', '.join(currentLocalAltSpellingsList)
+
+            # Updating the meanings
             localMeaningIndexes = currentLocalMeaningIndexes.split(";")
             localMeaningLoopIndex = 0
             while localMeaningLoopIndex < len(localMeaningIndexes):
@@ -683,8 +743,9 @@ while jishoWordIndex < len(jishoWords):
             for i in range(len(jishoWordMeanings)):
 
                 # If the verb is a suru verb, the meanings are not added since it is assumed that it already has the correct meanings
-                if (jishoWordTypesForSheets[i] == "V") & (not (" suru" in currentLocalRomaji)) & (
-                not ("ssuru" in currentLocalRomaji)):
+                if (jishoWordTypesForSheets[i] == "V")\
+                        & (not (" suru" in currentLocalRomaji))\
+                        & (not ("ssuru" in currentLocalRomaji)):
                     jishoWordMeaningString = jishoWordMeanings[i]
                     jishoWordMeaningType = jishoWordMeaningTypes[i]
 
@@ -716,12 +777,24 @@ while jishoWordIndex < len(jishoWords):
         currentLocalRomaji = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=3).value)
         currentLocalKanji = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=4).value)
         currentLocalMeaningIndexes = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=5).value)
+        currentLocalAltSpellings = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=6).value)
 
         # Once the identical local entry is found, find the meanings that are unique to the Jisho word, and add them to the database
         if (currentLocalRomaji == jishoWordRomaji) & (currentLocalKanji == jishoWordKanji):
 
             wordAlreadyExists = True
 
+            # Updating the altSpellings
+            if currentLocalAltSpellings == "" or currentLocalAltSpellings == "None":
+                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=6).value = jishoWordAltSpellings
+            else:
+                currentLocalAltSpellingsList = [element.strip() for element in currentLocalAltSpellings.split(",")]
+                for jishoWordAltSpelling in jishoWordAltSpellings.split(","):
+                    if jishoWordAltSpelling not in currentLocalAltSpellings:
+                        currentLocalAltSpellingsList.append(jishoWordAltSpelling)
+                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=6).value = ', '.join(currentLocalAltSpellingsList)
+
+            # Updating the meanings
             # Removing identical meaning entries from the jisho meanings list: they correspond to different types (e.g. Noun and Ana)
             # but may cause problems with already existing multiple entries.
             # Namely, meaning_Noun = meaning_Ana in Jisho, but meaning_Noun != meaning_Ana in local, so the next loop would create a new
