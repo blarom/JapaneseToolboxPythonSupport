@@ -1,0 +1,1822 @@
+#!/usr/bin/python -tt
+
+
+class JapaneseToolboxConverter:
+    def __init__(self, input_word):
+        self.input_word = input_word
+        self.latin_transliteration = ''
+        self.hiragana_transliteration = ''
+        self.katakana_transliteration = ''
+        self.TYPE_LATIN = 0
+        self.TYPE_HIRAGANA = 1
+        self.TYPE_KATAKANA = 2
+
+    def get_latin_hiragana_katakana(self, input_word):
+
+        latin_transliteration = ''
+        hiragana_transliteration = ''
+        katakana_transliteration = ''
+
+        transliterations = [latin_transliteration, hiragana_transliteration, katakana_transliteration]
+
+        character = ''
+        added_string_last = ''
+        if not input_word == '':
+            character = input_word[0]
+        else:
+            return transliterations
+
+        final_index = 0
+        if not input_word == '':
+            final_index = len(input_word) - 1
+
+        for i in range(final_index):
+            character_next = ""
+            character_next2 = ""
+            character_last = ""
+
+            character = input_word[i]
+            if i <= final_index - 1:
+                character_next = input_word[i + 1]
+            if i <= final_index - 2:
+                character_next2 = input_word[i + 2]
+            if i > 0:
+                character_last = input_word[i - 1]
+
+            # Detecting what the current character represents
+            scriptdetector_output = self.get_char_based_on_phoneme(i, character, character_next, character_next2, character_last)
+
+            i = int(scriptdetector_output[0])
+            added_string = scriptdetector_output[1]
+
+            # Getting the current string addition
+            charFinderOutput = self.get_char_based_on_phoneme(i, added_string, character, character_next, added_string_last)
+            added_string_last = added_string
+
+            i = int(charFinderOutput[0])
+            added_string_latin = charFinderOutput[1]
+            added_string_hiragana = charFinderOutput[2]
+            added_string_katakana = charFinderOutput[3]
+
+            # Add the string to the translation
+            latin_transliteration = latin_transliteration + added_string_latin
+            hiragana_transliteration = hiragana_transliteration + added_string_hiragana
+            katakana_transliteration = katakana_transliteration + added_string_katakana
+
+        transliterations[self.TYPE_LATIN] = latin_transliteration
+        transliterations[self.TYPE_HIRAGANA] = hiragana_transliteration
+        transliterations[self.TYPE_KATAKANA] = katakana_transliteration
+
+        return transliterations
+
+
+    def get_char_based_on_phoneme(self, i, character, character_next, character_next2, character_last):
+
+        character = str(character).lower()
+        character_next = str(character_next).lower()
+        character_next2 = str(character_next2).lower()
+        character_last = str(character_last).lower()
+
+        added_string = ""
+        if character == "あ":
+            if character == character_last:
+                added_string = "a_double_vowel"
+            else:
+                if character_next == "ぁ":
+                    added_string = "aa"
+                    i += 1
+                else:
+                    added_string = "a"
+
+        elif character == "い":
+            if character == character_last:
+                added_string = "i_double_vowel"
+            else:
+                if character_next == "ぃ":
+                    added_string = "ii"
+                    i += 1
+                elif character_next == "ぇ":
+                    added_string = "ye"
+                    i += 1
+                else:
+                    added_string = "i"
+
+        elif character == "え":
+            if character == character_last:
+                added_string = "e_double_vowel"
+            else:
+                if character_next == "ぇ":
+                    added_string = "ee"
+                    i += 1
+                else:
+                    added_string = "e"
+
+        elif character == "お":
+            if character == character_last:
+                added_string = "o_double_vowel"
+            else:
+                if character_next == "ぉ":
+                    added_string = "oo"
+                    i += 1
+                else:
+                    added_string = "o"
+
+        elif character == "か":
+            added_string = "ka"
+        elif character == "き":
+
+            if character_next == "ゃ":
+                added_string = "kya"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "kyu"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "kyo"
+                i += 1
+            else:
+                added_string = "ki"
+
+        elif character == "く":
+            added_string = "ku"
+        elif character == "け":
+            added_string = "ke"
+        elif character == "こ":
+            added_string = "ko"
+        elif character == "が":
+            added_string = "ga"
+        elif character == "ぎ":
+
+            if character_next == "ゃ":
+                added_string = "gya"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "gyu"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "gyo"
+                i += 1
+            else:
+                added_string = "gi"
+
+        elif character == "ぐ":
+            added_string = "gu"
+        elif character == "げ":
+            added_string = "ge"
+        elif character == "ご":
+            added_string = "go"
+        elif character == "さ":
+            added_string = "sa"
+        elif character == "す":
+            added_string = "su"
+        elif character == "せ":
+            added_string = "se"
+        elif character == "そ":
+            added_string = "so"
+        elif character == "ざ":
+            added_string = "za"
+        elif character == "ず":
+            added_string = "zu"
+        elif character == "ぜ":
+            added_string = "ze"
+        elif character == "ぞ":
+            added_string = "zo"
+        elif character == "し":
+            if character_next == "ゃ":
+                added_string = "sha"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "shu"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "she"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "sho"
+                i += 1
+            else:
+                added_string = "shi"
+
+        elif character == "じ":
+            if character_next == "ゃ":
+                added_string = "ja"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "ju"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "je"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "jo"
+                i += 1
+            else:
+                added_string = "ji"
+
+        elif character == "た":
+            added_string = "ta"
+        elif character == "て":
+            added_string = "te"
+        elif character == "と":
+            added_string = "to"
+        elif character == "だ":
+            added_string = "da"
+        elif character == "で":
+            added_string = "de"
+        elif character == "ど":
+            added_string = "do"
+        elif character == "ち":
+            if character_next == "ゃ":
+                added_string = "cha"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "chu"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "che"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "cho"
+                i += 1
+            else:
+                added_string = "chi"
+
+        elif character == "ぢ":
+            if character_next == "ゃ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "di"
+
+        elif character == "つ":
+            if character_next == "ぁ":
+                added_string = "tsa"
+                i += 1
+            elif character_next == "ぃ":
+                added_string = "tsi"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "tse"
+                i += 1
+            elif character_next == "ぉ":
+                added_string = "tso"
+                i += 1
+            else:
+                added_string = "tsu"
+
+        elif character == "づ":
+            if character_next == "ぁ":
+                added_string = "da"
+                i += 1
+            elif character_next == "ぃ":
+                added_string = "di"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "de"
+                i += 1
+            elif character_next == "ぉ":
+                added_string = "do"
+                i += 1
+            else:
+                added_string = "du"
+
+        elif character == "な":
+            added_string = "na"
+        elif character == "ぬ":
+            added_string = "nu"
+        elif character == "ね":
+            added_string = "ne"
+        elif character == "の":
+            added_string = "no"
+        elif character == "ん":
+            if character_next == "あ":
+                added_string = "n'"
+            elif character_next == "え":
+                added_string = "n'"
+            elif character_next == "い":
+                added_string = "n'"
+            elif character_next == "お":
+                added_string = "n'"
+            elif character_next == "う":
+                added_string = "n'"
+            elif character_next == "や":
+                added_string = "n'"
+            elif character_next == "よ":
+                added_string = "n'"
+            elif character_next == "ゆ":
+                added_string = "n'"
+            else:
+                added_string = "n"
+
+        elif character == "に":
+            if character_next == "ゃ":
+                added_string = "nya"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "nyu"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "nye"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "nyo"
+                i += 1
+            else:
+                added_string = "ni"
+
+        elif character == "は":
+            added_string = "ha"
+
+        elif character == "ひ":
+            if character_next == "ゃ":
+                added_string = "hya"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "hyu"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "hye"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "hyo"
+                i += 1
+            else:
+                added_string = "hi"
+
+        elif character == "へ":
+            added_string = "he"
+        elif character == "ほ":
+            added_string = "ho"
+        elif character == "ば":
+            added_string = "ba"
+        elif character == "び":
+            if character_next == "ゃ":
+                added_string = "bya"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "byu"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "bye"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "byo"
+                i += 1
+            else:
+                added_string = "bi"
+
+        elif character == "べ":
+            added_string = "be"
+        elif character == "ぼ":
+            added_string = "bo"
+        elif character == "ぶ":
+            added_string = "bu"
+        elif character == "ぱ":
+            added_string = "pa"
+        elif character == "ぴ":
+            if character_next == "ゃ":
+                added_string = "pya"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "pyu"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "pye"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "pyo"
+                i += 1
+            else:
+                added_string = "pi"
+
+        elif character == "ぺ":
+            added_string = "pe"
+        elif character == "ぽ":
+            added_string = "po"
+        elif character == "ぷ":
+            added_string = "pu"
+        elif character == "ふ":
+            if character_next == "ぁ":
+                added_string = "fa"
+                i += 1
+            elif character_next == "ぃ":
+                added_string = "fi"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "fe"
+                i += 1
+            elif character_next == "ぉ":
+                added_string = "fo"
+                i += 1
+            elif character_next == "ゃ":
+                added_string = "fya"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "fyu"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "fyo"
+                i += 1
+            else:
+                added_string = "fu"
+
+        elif character == "ま":
+            added_string = "ma"
+
+        elif character == "み":
+            if character_next == "ゃ":
+                added_string = "mya"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "myu"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "mye"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "myo"
+                i += 1
+            else:
+                added_string = "mi"
+
+        elif character == "む":
+            added_string = "mu"
+        elif character == "め":
+            added_string = "me"
+        elif character == "も":
+            added_string = "mo"
+        elif character == "や":
+            added_string = "ya"
+        elif character == "ゆ":
+            added_string = "yu"
+        elif character == "よ":
+            added_string = "yo"
+        elif character == "ら":
+            added_string = "ra"
+        elif character == "り":
+            if character_next == "ゃ":
+                added_string = "rya"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "ryu"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "rye"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "ryo"
+                i += 1
+            else:
+                added_string = "ri"
+
+        elif character == "る":
+            added_string = "ru"
+        elif character == "れ":
+            added_string = "re"
+        elif character == "ろ":
+            added_string = "ro"
+        elif character == "わ":
+            added_string = "wa"
+        elif character == "う":
+            if character == character_last:
+                added_string = "u_double_vowel"
+            else:
+                if character_next == "ぃ":
+                    added_string = "wi"
+                    i += 1
+                elif character_next == "ぇ":
+                    added_string = "we"
+                    i += 1
+                else:
+                    added_string = "u"
+
+        elif character == "を":
+            added_string = "wo"
+        elif character == "ゔ":
+            if character_next == "ぁ":
+                added_string = "va"
+                i += 1
+            elif character_next == "ぃ":
+                added_string = "vi"
+                i += 1
+            elif character_next == "ぇ":
+                added_string = "ve"
+                i += 1
+            elif character_next == "ぉ":
+                added_string = "vo"
+                i += 1
+            else:
+                added_string = "vu"
+
+        elif character == "ゐ":
+            added_string = "xwi"
+        elif character == "ゑ":
+            added_string = "xwe"
+        elif character == "っ":
+            added_string = "small_tsu"
+
+        elif character == "ア":
+            if character == character_last:
+                added_string = "a_double_vowel"
+            else:
+                added_string = "a"
+
+        elif character == "イ":
+            if character == character_last:
+                added_string = "i_double_vowel"
+            elif character_next == "ェ":
+                added_string = "ye"
+                i += 1
+            else:
+                added_string = "i"
+
+        elif character == "エ":
+            if character == character_last:
+                added_string = "e_double_vowel"
+            else:
+                added_string = "e"
+
+        elif character == "オ":
+            if character == character_last:
+                added_string = "o_double_vowel"
+            else:
+                added_string = "o"
+
+        elif character == "カ":
+            added_string = "ka"
+        elif character == "キ":
+            if character_next == "ャ":
+                added_string = "kya"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "kyu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "kye"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "kyo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "kyi"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "ki"
+
+        elif character == "ク":
+            added_string = "ku"
+        elif character == "ケ":
+            added_string = "ke"
+        elif character == "コ":
+            added_string = "ko"
+        elif character == "ガ":
+            added_string = "ga"
+        elif character == "ギ":
+            if character_next == "ャ":
+                added_string = "gya"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "gyu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "gye"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "gyo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "gyi"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "gi"
+
+        elif character == "グ":
+            added_string = "gu"
+        elif character == "ゲ":
+            added_string = "ge"
+        elif character == "ゴ":
+            added_string = "go"
+        elif character == "サ":
+            added_string = "sa"
+        elif character == "ス":
+            added_string = "su"
+        elif character == "セ":
+            added_string = "se"
+        elif character == "ソ":
+            added_string = "so"
+        elif character == "ザ":
+            added_string = "za"
+        elif character == "ズ":
+            added_string = "zu"
+        elif character == "ゼ":
+            added_string = "ze"
+        elif character == "ゾ":
+            added_string = "zo"
+        elif character == "シ":
+            if character_next == "ャ":
+                added_string = "sha"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "shu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "she"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "sho"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "shi"
+
+        elif character == "ジ":
+            if character_next == "ャ":
+                added_string = "ja"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "ju"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "je"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "jo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "ji"
+
+        elif character == "タ":
+            added_string = "ta"
+        elif character == "テ":
+            if character_next == "ィ":
+                i += 1
+            elif character_next == "ュ":
+                added_string = "tu"
+                i += 1
+            else:
+                added_string = "te"
+
+        elif character == "ト":
+            if character_next == "ャ":
+                added_string = "ta"
+                i += 1
+            elif character_next == "ゥ":
+                added_string = "tu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "te"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "ti"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "to"
+                i += 1
+            else:
+                added_string = "to"
+
+        elif character == "ダ":
+            added_string = "da"
+        elif character == "デ":
+            if character_next == "ャ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "du"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "di"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "de"
+
+        elif character == "ド":
+            added_string = "do"
+        elif character == "チ":
+            if character_next == "ャ":
+                added_string = "cha"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "chu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "che"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "cho"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "chi"
+
+        elif character == "ヂ":
+            if character_next == "ャ":
+                added_string = "dja"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "dju"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "dje"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "djo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "dji"
+
+        elif character == "ツ":
+            if character_next == "ャ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "tse"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "tsa"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "tsi"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "tso"
+                i += 1
+            else:
+                added_string = "tsu"
+
+        elif character == "ヅ":
+            if character_next == "ャ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "dze"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "dza"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "dzi"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "dzo"
+                i += 1
+            else:
+                added_string = "dzu"
+
+        elif character == "ナ":
+            added_string = "na"
+        elif character == "ヌ":
+            added_string = "nu"
+        elif character == "ネ":
+            added_string = "ne"
+        elif character == "ノ":
+            added_string = "no"
+        elif character == "ン":
+            if character_next == "ア":
+                added_string = "n'"
+            elif character_next == "エ":
+                added_string = "n'"
+            elif character_next == "イ":
+                added_string = "n'"
+            elif character_next == "オ":
+                added_string = "n'"
+            elif character_next == "ウ":
+                added_string = "n'"
+            elif character_next == "ヤ":
+                added_string = "n'"
+            elif character_next == "ヨ":
+                added_string = "n'"
+            elif character_next == "ュ":
+                added_string = "n'"
+            else:
+                added_string = "n"
+
+        elif character == "ニ":
+
+            if character_next == "ャ":
+                added_string = "nya"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "nyu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "nye"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "nyo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "nyi"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "ni"
+
+        elif character == "ハ":
+            added_string = "ha"
+        elif character == "ヒ":
+
+            if character_next == "ャ":
+                added_string = "hya"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "hyu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "hye"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "hyo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "hyi"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "hi"
+
+        elif character == "ヘ":
+            added_string = "he"
+        elif character == "ホ":
+            added_string = "ho"
+        elif character == "バ":
+            added_string = "ba"
+        elif character == "ビ":
+            if character_next == "ャ":
+                added_string = "bya"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "byu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "bye"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "byo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "byi"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "bi"
+
+        elif character == "ベ":
+            added_string = "be"
+        elif character == "ボ":
+            added_string = "bo"
+        elif character == "ブ":
+            added_string = "bu"
+        elif character == "パ":
+            added_string = "pa"
+        elif character == "ピ":
+            if character_next == "ャ":
+                added_string = "pya"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "pyu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "pye"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "pyo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "pyi"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "pi"
+
+        elif character == "ペ":
+            added_string = "pe"
+        elif character == "ポ":
+            added_string = "po"
+        elif character == "プ":
+            added_string = "pu"
+        elif character == "フ":
+
+            if character_next == "ャ":
+                added_string = "fya"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "fyu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "fe"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "fyo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "fa"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "fi"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "fo"
+                i += 1
+            else:
+                added_string = "fu"
+
+        elif character == "マ":
+            added_string = "ma"
+        elif character == "ミ":
+            if character_next == "ャ":
+                added_string = "mya"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "myu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "mye"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "myo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "mi"
+
+        elif character == "ム":
+            added_string = "mu"
+        elif character == "メ":
+            added_string = "me"
+        elif character == "モ":
+            added_string = "mo"
+        elif character == "ヤ":
+            added_string = "ya"
+        elif character == "ユ":
+            added_string = "yu"
+        elif character == "ヨ":
+            added_string = "yo"
+        elif character == "ラ":
+            added_string = "ra"
+        elif character == "リ":
+            if character_next == "ャ":
+                added_string = "rya"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "ryu"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "rye"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "ryo"
+                i += 1
+            elif character_next == "ァ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "ri"
+
+        elif character == "ル":
+            added_string = "ru"
+        elif character == "レ":
+            added_string = "re"
+        elif character == "ロ":
+            added_string = "ro"
+        elif character == "ワ":
+            added_string = "wa"
+        elif character == "ウ":
+            if character == character_last:
+                added_string = "u_double_vowel"
+            else:
+                if character_next == "ャ":
+                    added_string = "*"
+                    i += 1
+                elif character_next == "ュ":
+                    added_string = "*"
+                    i += 1
+                elif character_next == "ェ":
+                    added_string = "we"
+                    i += 1
+                elif character_next == "ョ":
+                    added_string = "*"
+                    i += 1
+                elif character_next == "ァ":
+                    added_string = "*"
+                    i += 1
+                elif character_next == "ィ":
+                    added_string = "wi"
+                    i += 1
+                elif character_next == "ォ":
+                    added_string = "vo"
+                    i += 1
+                else:
+                    added_string = "u"
+
+        elif character == "ヲ":
+            added_string = "wo"
+        elif character == "ヴ":
+            if character_next == "ァ":
+                added_string = "va"
+                i += 1
+            elif character_next == "ィ":
+                added_string = "vi"
+                i += 1
+            elif character_next == "ェ":
+                added_string = "ve"
+                i += 1
+            elif character_next == "ォ":
+                added_string = "vo"
+                i += 1
+            else:
+                added_string = "vu"
+
+        elif character == "ヷ":
+            added_string = "va"
+        elif character == "ヸ":
+            added_string = "vi"
+        elif character == "ヹ":
+            added_string = "ve"
+        elif character == "ヺ":
+            added_string = "vo"
+        elif character == "ヰ":
+            added_string = "xwi"
+        elif character == "ヱ":
+            added_string = "xwe"
+        elif character == "ッ":
+            added_string = "small_tsu"
+
+        elif character == "ー":
+            added_string = "katakana_repeat_bar"
+
+        elif character == "a":
+            if character == character_last:
+                added_string = "a_double_vowel"
+            else:
+                added_string = "a"
+
+        elif character == "b":
+            if character_next == "a":
+                added_string = "ba"
+                i += 1
+            elif character_next == "e":
+                added_string = "be"
+                i += 1
+            elif character_next == "i":
+                added_string = "bi"
+                i += 1
+            elif character_next == "o":
+                added_string = "bo"
+                i += 1
+            elif character_next == "u":
+                added_string = "bu"
+                i += 1
+            elif character_next == "y":
+                if character_next2 == "a":
+                    added_string = "bya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "bye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "byi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "byo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "byu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "b":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "c":
+            if character_next == "h":
+                if character_next2 == "a":
+                    added_string = "cha"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "che"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "chi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "cho"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "chu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "c":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "d":
+
+            if character_next == "a":
+                added_string = "da"
+                i += 1
+            elif character_next == "e":
+                added_string = "de"
+                i += 1
+            elif character_next == "i":
+                added_string = "di"
+                i += 1
+            elif character_next == "o":
+                added_string = "do"
+                i += 1
+            elif character_next == "u":
+                added_string = "du"
+                i += 1
+            elif character_next == "d":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "e":
+            if character == character_last:
+                added_string = "e_double_vowel"
+            else:
+                added_string = "e"
+
+        elif character == "f":
+            if character_next == "a":
+                added_string = "fa"
+                i += 1
+            elif character_next == "e":
+                added_string = "fe"
+                i += 1
+            elif character_next == "i":
+                added_string = "fi"
+                i += 1
+            elif character_next == "o":
+                added_string = "fo"
+                i += 1
+            elif character_next == "u":
+                added_string = "fu"
+                i += 1
+            elif character_next == "y":
+                if character_next2 == "a":
+                    added_string = "fya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "fye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "fyi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "fyo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "fyu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "f":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "g":
+
+            if character_next == "a":
+                added_string = "ga"
+                i += 1
+            elif character_next == "e":
+                added_string = "ge"
+                i += 1
+            elif character_next == "i":
+                added_string = "gi"
+                i += 1
+            elif character_next == "o":
+                added_string = "go"
+                i += 1
+            elif character_next == "u":
+                added_string = "gu"
+                i += 1
+            elif character_next == "y":
+                if character_next2 == "a":
+                    added_string = "gya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "gye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "gyi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "gyo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "gyu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "g":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "h":
+            if character_next == "a":
+                added_string = "ha"
+                i += 1
+            elif character_next == "e":
+                added_string = "he"
+                i += 1
+            elif character_next == "i":
+                added_string = "hi"
+                i += 1
+            elif character_next == "o":
+                added_string = "ho"
+                i += 1
+            elif character_next == "u":
+                added_string = "hu"
+                i += 1
+            elif character_next == "y":
+                if character_next2 == "a":
+                    added_string = "hya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "hye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "hyi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "hyo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "hyu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            else:
+                added_string = "*"
+
+        elif character == "i":
+            if character == character_last:
+                added_string = "i_double_vowel"
+            else:
+                added_string = "i"
+
+        elif character == "j":
+            if character_next == "a":
+                added_string = "ja"
+                i += 1
+            elif character_next == "e":
+                added_string = "je"
+                i += 1
+            elif character_next == "i":
+                added_string = "ji"
+                i += 1
+            elif character_next == "o":
+                added_string = "jo"
+                i += 1
+            elif character_next == "u":
+                added_string = "ju"
+                i += 1
+            elif character_next == "y":
+
+                if character_next2 == "a":
+                    added_string = "jya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "jye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "jyi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "jyo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "jyu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "j":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "k":
+
+            if character_next == "a":
+                added_string = "ka"
+                i += 1
+            elif character_next == "e":
+                added_string = "ke"
+                i += 1
+            elif character_next == "i":
+                added_string = "ki"
+                i += 1
+            elif character_next == "o":
+                added_string = "ko"
+                i += 1
+            elif character_next == "u":
+                added_string = "ku"
+                i += 1
+            elif character_next == "y":
+
+                if character_next2 == "a":
+                    added_string = "kya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "kye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "kyi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "kyo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "kyu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "k":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "l":
+            added_string = "*"
+        elif character == "m":
+
+            if character_next == "a":
+                added_string = "ma"
+                i += 1
+            elif character_next == "e":
+                added_string = "me"
+                i += 1
+            elif character_next == "i":
+                added_string = "mi"
+                i += 1
+            elif character_next == "o":
+                added_string = "mo"
+                i += 1
+            elif character_next == "u":
+                added_string = "mu"
+                i += 1
+            elif character_next == "y":
+
+                if character_next2 == "a":
+                    added_string = "mya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "mye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "myi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "myo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "myu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "m":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "n":
+
+            if character_next == "'":
+                added_string = "n'"
+                i += 1
+            elif character_next == "a":
+                added_string = "na"
+                i += 1
+            elif character_next == "e":
+                added_string = "ne"
+                i += 1
+            elif character_next == "i":
+                added_string = "ni"
+                i += 1
+            elif character_next == "o":
+                added_string = "no"
+                i += 1
+            elif character_next == "u":
+                added_string = "nu"
+                i += 1
+            elif character_next == "y":
+
+                if character_next2 == "a":
+                    added_string = "nya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "nye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "nyi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "nyo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "nyu"
+                    i += 2
+                else:
+                    added_string = "*"
+                    i += 1
+
+            else:
+                added_string = "n"
+
+        elif character == "o":
+            if character == character_last:
+                added_string = "o_double_vowel"
+            else:
+                added_string = "o"
+
+        elif character == "p":
+
+            if character_next == "a":
+                added_string = "pa"
+                i += 1
+            elif character_next == "e":
+                added_string = "pe"
+                i += 1
+            elif character_next == "i":
+                added_string = "pi"
+                i += 1
+            elif character_next == "o":
+                added_string = "po"
+                i += 1
+            elif character_next == "u":
+                added_string = "pu"
+                i += 1
+            elif character_next == "y":
+
+                if character_next2 == "a":
+                    added_string = "pya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "pye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "pyi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "pyo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "pyu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "p":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "q":
+            added_string = "*"
+        elif character == "r":
+
+            if character_next == "a":
+                added_string = "ra"
+                i += 1
+            elif character_next == "e":
+                added_string = "re"
+                i += 1
+            elif character_next == "i":
+                added_string = "ri"
+                i += 1
+            elif character_next == "o":
+                added_string = "ro"
+                i += 1
+            elif character_next == "u":
+                added_string = "ru"
+                i += 1
+            elif character_next == "y":
+
+                if character_next2 == "a":
+                    added_string = "rya"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "rye"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "ryi"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "ryo"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "ryu"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "r":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "s":
+
+            if character_next == "a":
+                added_string = "sa"
+                i += 1
+            elif character_next == "e":
+                added_string = "se"
+                i += 1
+            elif character_next == "o":
+                added_string = "so"
+                i += 1
+            elif character_next == "u":
+                added_string = "su"
+                i += 1
+            elif character_next == "h":
+
+                if character_next2 == "i":
+                    added_string = "shi"
+                    i += 2
+                elif character_next2 == "a":
+                    added_string = "sha"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "sho"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "shu"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "she"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "s":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "t":
+
+            if character_next == "a":
+                added_string = "ta"
+                i += 1
+            elif character_next == "e":
+                added_string = "te"
+                i += 1
+            elif character_next == "i":
+                added_string = "ti"
+                i += 1
+            elif character_next == "o":
+                added_string = "to"
+                i += 1
+            elif character_next == "u":
+                added_string = "tu"
+                i += 1
+            elif character_next == "s":
+
+                if character_next2 == "a":
+                    added_string = "tsa"
+                    i += 2
+                elif character_next2 == "i":
+                    added_string = "tsi"
+                    i += 2
+                elif character_next2 == "u":
+                    added_string = "tsu"
+                    i += 2
+                elif character_next2 == "e":
+                    added_string = "tse"
+                    i += 2
+                elif character_next2 == "o":
+                    added_string = "tso"
+                    i += 2
+                else:
+                    added_string = "*"
+
+            elif character_next == "t":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "u":
+            if character == character_last:
+                added_string = "u_double_vowel"
+            else:
+                added_string = "u"
+
+        elif character == "v":
+
+            if character_next == "a":
+                added_string = "va"
+                i += 1
+            elif character_next == "e":
+                added_string = "ve"
+                i += 1
+            elif character_next == "i":
+                added_string = "vi"
+                i += 1
+            elif character_next == "o":
+                added_string = "vo"
+                i += 1
+            elif character_next == "u":
+                added_string = "vu"
+                i += 1
+            elif character_next == "v":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "w":
+
+            if character_next == "a":
+                added_string = "wa"
+                i += 1
+            elif character_next == "e":
+                added_string = "we"
+                i += 1
+            elif character_next == "i":
+                added_string = "wi"
+                i += 1
+            elif character_next == "o":
+                added_string = "wo"
+                i += 1
+            elif character_next == "u":
+                added_string = "wu"
+                i += 1
+            elif character_next == "w":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        elif character == "x":
+            added_string = "*"
+        elif character == "y":
+
+            if character_next == "a":
+                added_string = "ya"
+                i += 1
+            elif character_next == "e":
+                added_string = "ye"
+                i += 1
+            elif character_next == "o":
+                added_string = "yo"
+                i += 1
+            elif character_next == "u":
+                added_string = "yu"
+                i += 1
+            else:
+                added_string = "*"
+
+        elif character == "z":
+
+            if character_next == "a":
+                added_string = "za"
+                i += 1
+            elif character_next == "e":
+                added_string = "ze"
+                i += 1
+            elif character_next == "o":
+                added_string = "zo"
+                i += 1
+            elif character_next == "u":
+                added_string = "zu"
+                i += 1
+            elif character_next == "z":
+                added_string = "small_tsu"
+            else:
+                added_string = "*"
+
+        else:
+            added_string = "original"
+
+        output = [str(i), added_string]
+
+        return output
