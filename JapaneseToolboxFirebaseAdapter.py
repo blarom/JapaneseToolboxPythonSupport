@@ -109,15 +109,15 @@ def getJTType(jishoType):
     if jishoType == "Adverb":
         return "A"
     elif jishoType == "Noun":
-        return "NACF"
+        return "N"
     elif jishoType == "Place":
-        return "NPl"
+        return "Pl"
     elif jishoType == "Temporal Noun":
-        return "NT"
+        return "T"
     elif jishoType == "Proper Noun":
-        return "NNe"
+        return "Ne"
     elif jishoType == "Numeric":
-        return "NNe"
+        return "num"
     elif "Suru verb" in jishoType:
         if "Transitive" in jishoType:
             return "VsuruT"
@@ -153,6 +153,21 @@ def getJTType(jishoType):
             return "VkuT"
         else:
             return "VkuI"
+    elif "Godan verb - Iku/Yuku" in jishoType:
+        if "Transitive" in jishoType:
+            return "VikuT"
+        else:
+            return "VikuI"
+    elif "Godan verb - aru" in jishoType:
+        if "Transitive" in jishoType:
+            return "VaruT"
+        else:
+            return "VaruI"
+    elif "Godan verb with u ending (special class)" in jishoType:
+        if "Transitive" in jishoType:
+            return "VusT"
+        else:
+            return "VusI"
     elif "Godan verb with mu" in jishoType:
         if "Transitive" in jishoType:
             return "VmuT"
@@ -190,9 +205,7 @@ def getJTType(jishoType):
         return "Ana"
     elif "adjective" in jishoType:
         return "Aj"
-    elif "Pre-noun adjectival" in jishoType:
-        return "P"
-    elif "Pronoun" in jishoType:
+    elif "Pre-noun adjectival" in jishoType or "Pronoun" in jishoType:
         return "P"
     elif "Expression" in jishoType:
         return "CE"
@@ -233,61 +246,61 @@ def getJTType(jishoType):
         return jishoType
     elif jishoType == "naAC":
         return jishoType
-    elif jishoType == "NAc":
+    elif jishoType == "Ac":
         return jishoType
-    elif jishoType == "NACF":
+    elif jishoType == "Abs":
         return jishoType
-    elif jishoType == "NAn":
+    elif jishoType == "An":
         return jishoType
-    elif jishoType == "NAt":
+    elif jishoType == "At":
         return jishoType
-    elif jishoType == "NB":
+    elif jishoType == "B":
         return jishoType
-    elif jishoType == "NCo":
+    elif jishoType == "Col":
         return jishoType
-    elif jishoType == "NCu":
+    elif jishoType == "Cu":
         return jishoType
-    elif jishoType == "NDM":
+    elif jishoType == "DM":
         return jishoType
-    elif jishoType == "NDW":
+    elif jishoType == "DW":
         return jishoType
-    elif jishoType == "NFa":
+    elif jishoType == "Fa":
         return jishoType
-    elif jishoType == "NFl":
+    elif jishoType == "Fl":
         return jishoType
-    elif jishoType == "NFy":
+    elif jishoType == "Fy":
         return jishoType
-    elif jishoType == "NGO":
+    elif jishoType == "GO":
         return jishoType
-    elif jishoType == "NJEP":
+    elif jishoType == "JEP":
         return jishoType
-    elif jishoType == "NMAC":
+    elif jishoType == "MAC":
         return jishoType
-    elif jishoType == "NMe":
+    elif jishoType == "Md":
         return jishoType
-    elif jishoType == "NMo":
+    elif jishoType == "Mo":
         return jishoType
-    elif jishoType == "NMSE":
+    elif jishoType == "MSE":
         return jishoType
-    elif jishoType == "NN":
+    elif jishoType == "N":
         return jishoType
-    elif jishoType == "NNe":
+    elif jishoType == "Ne":
         return jishoType
-    elif jishoType == "NNE":
+    elif jishoType == "NE":
         return jishoType
-    elif jishoType == "NNn":
+    elif jishoType == "Nn":
         return jishoType
-    elif jishoType == "NOI":
+    elif jishoType == "org":
         return jishoType
-    elif jishoType == "NPe":
+    elif jishoType == "Pe":
         return jishoType
-    elif jishoType == "NPl":
+    elif jishoType == "Pl":
         return jishoType
-    elif jishoType == "NS":
+    elif jishoType == "Sp":
         return jishoType
-    elif jishoType == "NT":
+    elif jishoType == "T":
         return jishoType
-    elif jishoType == "NV":
+    elif jishoType == "V":
         return jishoType
     elif jishoType == "NW":
         return jishoType
@@ -367,6 +380,18 @@ def getJTType(jishoType):
         return jishoType
     elif jishoType == "VuT":
         return jishoType
+    elif jishoType == "VikuI":
+        return jishoType
+    elif jishoType == "VikuT":
+        return jishoType
+    elif jishoType == "VaruI":
+        return jishoType
+    elif jishoType == "VaruT":
+        return jishoType
+    elif jishoType == "VusI":
+        return jishoType
+    elif jishoType == "VusT":
+        return jishoType
 
     elif jishoType == "Invalid":
         return ""
@@ -419,8 +444,26 @@ for wordKey in jishoWordsListFromFirebase.val():
         meanings.append(jishoMeaning)
 
     # Creating the local word object
-    jishoWord = JishoWord(wordObject.romaji, wordObject.kanji, wordObject.altSpellings, meanings)
-    jishoWords.append(jishoWord)
+    if      (not ((wordObject.romaji == "ha" or wordObject.romaji == "wa") and wordObject.kanji == "は"))\
+        and (not ((wordObject.romaji == "he" or wordObject.romaji == "e") and wordObject.kanji == "へ"))\
+        and (not ((wordObject.romaji == "deha" or wordObject.romaji == "dewa") and wordObject.kanji == "では"))\
+        and (not ((wordObject.romaji == "niha" or wordObject.romaji == "niwa") and wordObject.kanji == "には"))\
+        and (not (wordObject.romaji == "kana" and wordObject.kanji == "かな"))\
+        and (not (wordObject.romaji == "to" and wordObject.kanji == "と"))\
+        and (not (wordObject.romaji == "ya" and wordObject.kanji == "や"))\
+        and (not (wordObject.romaji == "mo" and wordObject.kanji == "も"))\
+        and (not (wordObject.romaji == "no" and wordObject.kanji == "の"))\
+        and (not (wordObject.romaji == "n" and wordObject.kanji == "ん"))\
+        and (not (wordObject.romaji == "wo" and wordObject.kanji == "を"))\
+        and (not (wordObject.romaji == "wa" and wordObject.kanji == "わ"))\
+        and (not (wordObject.romaji == "yo" and wordObject.kanji == "よ"))\
+        and (not (wordObject.romaji == "na" and wordObject.kanji == "な"))\
+        and (not (wordObject.romaji == "ka" and wordObject.kanji == "か"))\
+        and (not (wordObject.romaji == "ga" and wordObject.kanji == "が"))\
+        and (not (wordObject.romaji == "ni" and wordObject.kanji == "に"))\
+        and (not (wordObject.kanji == "ケ" and wordObject.kanji == "ヶ")):
+        jishoWord = JishoWord(wordObject.romaji, wordObject.kanji, wordObject.altSpellings, meanings)
+        jishoWords.append(jishoWord)
 # endregion
 
 # region Iterating on the JishoWord list to integrate the words in the local sheets

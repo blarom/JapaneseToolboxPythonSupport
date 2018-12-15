@@ -1,12 +1,8 @@
 #!/usr/bin/python -tt
 
 
-class JapaneseToolboxConverter:
-    def __init__(self, input_word):
-        self.input_word = input_word
-        self.latin_transliteration = ''
-        self.hiragana_transliteration = ''
-        self.katakana_transliteration = ''
+class Converter:
+    def __init__(self):
         self.TYPE_LATIN = 0
         self.TYPE_HIRAGANA = 1
         self.TYPE_KATAKANA = 2
@@ -30,7 +26,9 @@ class JapaneseToolboxConverter:
         if not input_word == '':
             final_index = len(input_word) - 1
 
-        for i in range(final_index):
+        i = 0
+        while i <= final_index:
+
             character_next = ""
             character_next2 = ""
             character_last = ""
@@ -44,24 +42,26 @@ class JapaneseToolboxConverter:
                 character_last = input_word[i - 1]
 
             # Detecting what the current character represents
-            scriptdetector_output = self.get_char_based_on_phoneme(i, character, character_next, character_next2, character_last)
+            script_detector_output = self.get_phoneme_based_on_letter(i, character, character_next, character_next2, character_last)
 
-            i = int(scriptdetector_output[0])
-            added_string = scriptdetector_output[1]
+            i = int(script_detector_output[0])
+            added_string = script_detector_output[1]
 
             # Getting the current string addition
-            charFinderOutput = self.get_char_based_on_phoneme(i, added_string, character, character_next, added_string_last)
+            char_finder_output = self.get_char_based_on_phoneme(i, added_string, character, character_next, added_string_last)
             added_string_last = added_string
 
-            i = int(charFinderOutput[0])
-            added_string_latin = charFinderOutput[1]
-            added_string_hiragana = charFinderOutput[2]
-            added_string_katakana = charFinderOutput[3]
+            i = int(char_finder_output[0])
+            added_string_latin = char_finder_output[1]
+            added_string_hiragana = char_finder_output[2]
+            added_string_katakana = char_finder_output[3]
 
             # Add the string to the translation
             latin_transliteration = latin_transliteration + added_string_latin
             hiragana_transliteration = hiragana_transliteration + added_string_hiragana
             katakana_transliteration = katakana_transliteration + added_string_katakana
+
+            i += 1
 
         transliterations[self.TYPE_LATIN] = latin_transliteration
         transliterations[self.TYPE_HIRAGANA] = hiragana_transliteration
@@ -69,8 +69,7 @@ class JapaneseToolboxConverter:
 
         return transliterations
 
-
-    def get_char_based_on_phoneme(self, i, character, character_next, character_next2, character_last):
+    def get_phoneme_based_on_letter(self, i, character, character_next, character_next2, character_last):
 
         character = str(character).lower()
         character_next = str(character_next).lower()
@@ -687,6 +686,7 @@ class JapaneseToolboxConverter:
             added_string = "ta"
         elif character == "テ":
             if character_next == "ィ":
+                added_string = "ti"
                 i += 1
             elif character_next == "ュ":
                 added_string = "tu"
@@ -1818,5 +1818,762 @@ class JapaneseToolboxConverter:
             added_string = "original"
 
         output = [str(i), added_string]
+
+        return output
+
+    def get_char_based_on_phoneme(self, i, added_string, character, character_next, added_string_last):
+
+        added_string_latin = ""
+        added_string_hiragana = ""
+        added_string_katakana = ""
+
+        if added_string == "a":
+            added_string_latin = "a"
+            added_string_hiragana = "あ"
+            added_string_katakana = "ア"
+        elif added_string == "ba":
+            added_string_latin = "ba"
+            added_string_hiragana = "ば"
+            added_string_katakana = "バ"
+        elif added_string == "bi":
+            added_string_latin = "bi"
+            added_string_hiragana = "び"
+            added_string_katakana = "ビ"
+        elif added_string == "bu":
+            added_string_latin = "bu"
+            added_string_hiragana = "ぶ"
+            added_string_katakana = "ブ"
+        elif added_string == "be":
+            added_string_latin = "be"
+            added_string_hiragana = "べ"
+            added_string_katakana = "ベ"
+        elif added_string == "bo":
+            added_string_latin = "bo"
+            added_string_hiragana = "ぼ"
+            added_string_katakana = "ボ"
+        elif added_string == "bya":
+            added_string_latin = "bya"
+            added_string_hiragana = "びゃ"
+            added_string_katakana = "ビャ"
+        elif added_string == "byu":
+            added_string_latin = "byu"
+            added_string_hiragana = "びゅ"
+            added_string_katakana = "ビュ"
+        elif added_string == "byi":
+            added_string_latin = "byi"
+            added_string_hiragana = "びぃ"
+            added_string_katakana = "ビィ"
+        elif added_string == "bye":
+            added_string_latin = "bye"
+            added_string_hiragana = "びぇ"
+            added_string_katakana = "ビェ"
+        elif added_string == "byo":
+            added_string_latin = "byo"
+            added_string_hiragana = "びょ"
+            added_string_katakana = "ビョ"
+        elif added_string == "cha":
+            added_string_latin = "cha"
+            added_string_hiragana = "ちゃ"
+            added_string_katakana = "チャ"
+        elif added_string == "chi":
+            added_string_latin = "chi"
+            added_string_hiragana = "ち"
+            added_string_katakana = "チ"
+        elif added_string == "chu":
+            added_string_latin = "chu"
+            added_string_hiragana = "ちゅ"
+            added_string_katakana = "チュ"
+        elif added_string == "che":
+            added_string_latin = "che"
+            added_string_hiragana = "ちぇ"
+            added_string_katakana = "チェ"
+        elif added_string == "cho":
+            added_string_latin = "cho"
+            added_string_hiragana = "ちょ"
+            added_string_katakana = "チョ"
+        elif added_string == "da":
+            added_string_latin = "da"
+            added_string_hiragana = "だ"
+            added_string_katakana = "ダ"
+        elif added_string == "di":
+            added_string_latin = "di"
+            added_string_hiragana = "ぢ"
+            added_string_katakana = "ヂ"
+        elif added_string == "du":
+            added_string_latin = "du"
+            added_string_hiragana = "づ"
+            added_string_katakana = "ヅ"
+        elif added_string == "de":
+            added_string_latin = "de"
+            added_string_hiragana = "で"
+            added_string_katakana = "デ"
+        elif added_string == "do":
+            added_string_latin = "do"
+            added_string_hiragana = "ど"
+            added_string_katakana = "ド"
+        elif added_string == "dja":
+            added_string_latin = "dja"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヂャ"
+        elif added_string == "dji":
+            added_string_latin = "dji"
+            added_string_hiragana = "ぢ"
+            added_string_katakana = "ヂ"
+        elif added_string == "dju":
+            added_string_latin = "dju"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヂュ"
+        elif added_string == "dje":
+            added_string_latin = "dje"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヂェ"
+        elif added_string == "djo":
+            added_string_latin = "djo"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヂョ"
+        elif added_string == "dza":
+            added_string_latin = "dza"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヅァ"
+        elif added_string == "dzi":
+            added_string_latin = "dzi"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヅィ"
+        elif added_string == "dzu":
+            added_string_latin = "dzu"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヅ"
+        elif added_string == "dze":
+            added_string_latin = "dze"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヅェ"
+        elif added_string == "dzo":
+            added_string_latin = "dzo"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヅォ"
+        elif added_string == "e":
+            added_string_latin = "e"
+            added_string_hiragana = "え"
+            added_string_katakana = "エ"
+        elif added_string == "fa":
+            added_string_latin = "fa"
+            added_string_hiragana = "ふぁ"
+            added_string_katakana = "ファ"
+        elif added_string == "fi":
+            added_string_latin = "fi"
+            added_string_hiragana = "ふぃ"
+            added_string_katakana = "フィ"
+        elif added_string == "fu":
+            added_string_latin = "fu"
+            added_string_hiragana = "ふ"
+            added_string_katakana = "フ"
+        elif added_string == "fe":
+            added_string_latin = "fe"
+            added_string_hiragana = "ふぇ"
+            added_string_katakana = "フェ"
+        elif added_string == "fo":
+            added_string_latin = "fo"
+            added_string_hiragana = "ふぉ"
+            added_string_katakana = "フォ"
+        elif added_string == "fya":
+            added_string_latin = "fya"
+            added_string_hiragana = "ふゃ"
+            added_string_katakana = "フャ"
+        elif added_string == "fye":
+            added_string_latin = "fye"
+            added_string_hiragana = "ふぇ"
+            added_string_katakana = "フェ"
+        elif added_string == "fyi":
+            added_string_latin = "fyi"
+            added_string_hiragana = "ふぃ"
+            added_string_katakana = "フィ"
+        elif added_string == "fyu":
+            added_string_latin = "fyu"
+            added_string_hiragana = "ふゅ"
+            added_string_katakana = "フュ"
+        elif added_string == "fyo":
+            added_string_latin = "fyo"
+            added_string_hiragana = "ふょ"
+            added_string_katakana = "フョ"
+        elif added_string == "ga":
+            added_string_latin = "ga"
+            added_string_hiragana = "が"
+            added_string_katakana = "ガ"
+        elif added_string == "gi":
+            added_string_latin = "gi"
+            added_string_hiragana = "ぎ"
+            added_string_katakana = "ギ"
+        elif added_string == "gu":
+            added_string_latin = "gu"
+            added_string_hiragana = "ぐ"
+            added_string_katakana = "グ"
+        elif added_string == "ge":
+            added_string_latin = "ge"
+            added_string_hiragana = "げ"
+            added_string_katakana = "ゲ"
+        elif added_string == "go":
+            added_string_latin = "go"
+            added_string_hiragana = "ご"
+            added_string_katakana = "ゴ"
+        elif added_string == "gya":
+            added_string_latin = "gya"
+            added_string_hiragana = "ぎゃ"
+            added_string_katakana = "ギャ"
+        elif added_string == "gye":
+            added_string_latin = "gye"
+            added_string_hiragana = "ぎぇ"
+            added_string_katakana = "ギェ"
+        elif added_string == "gyi":
+            added_string_latin = "gyi"
+            added_string_hiragana = "ぎぃ"
+            added_string_katakana = "ギィ"
+        elif added_string == "gyu":
+            added_string_latin = "gyu"
+            added_string_hiragana = "ぎゅ"
+            added_string_katakana = "ギュ"
+        elif added_string == "gyo":
+            added_string_latin = "gyo"
+            added_string_hiragana = "ぎょ"
+            added_string_katakana = "ギョ"
+        elif added_string == "ha":
+            added_string_latin = "ha"
+            added_string_hiragana = "は"
+            added_string_katakana = "ハ"
+        elif added_string == "hi":
+            added_string_latin = "hi"
+            added_string_hiragana = "ひ"
+            added_string_katakana = "ヒ"
+        elif added_string == "hu":
+            added_string_latin = "hu"
+            added_string_hiragana = "ふ"
+            added_string_katakana = "フ"
+        elif added_string == "he":
+            added_string_latin = "he"
+            added_string_hiragana = "へ"
+            added_string_katakana = "ヘ"
+        elif added_string == "ho":
+            added_string_latin = "ho"
+            added_string_hiragana = "ほ"
+            added_string_katakana = "ホ"
+        elif added_string == "hya":
+            added_string_latin = "hya"
+            added_string_hiragana = "ひゃ"
+            added_string_katakana = "ヒャ"
+        elif added_string == "hyi":
+            added_string_latin = "hyi"
+            added_string_hiragana = "ひぃ"
+            added_string_katakana = "ヒィ"
+        elif added_string == "hyu":
+            added_string_latin = "hyu"
+            added_string_hiragana = "ひゅ"
+            added_string_katakana = "ヒュ"
+        elif added_string == "hye":
+            added_string_latin = "hye"
+            added_string_hiragana = "ひぇ"
+            added_string_katakana = "ヒェ"
+        elif added_string == "hyo":
+            added_string_latin = "hyo"
+            added_string_hiragana = "ひょ"
+            added_string_katakana = "ヒョ"
+        elif added_string == "i":
+            added_string_latin = "i"
+            added_string_hiragana = "い"
+            added_string_katakana = "イ"
+        elif added_string == "ja":
+            added_string_latin = "ja"
+            added_string_hiragana = "じゃ"
+            added_string_katakana = "ジャ"
+        elif added_string == "ji":
+            added_string_latin = "ji"
+            added_string_hiragana = "じ"
+            added_string_katakana = "ジ"
+        elif added_string == "ju":
+            added_string_latin = "ju"
+            added_string_hiragana = "じゅ"
+            added_string_katakana = "ジュ"
+        elif added_string == "je":
+            added_string_latin = "je"
+            added_string_hiragana = "じぇ"
+            added_string_katakana = "ジェ"
+        elif added_string == "jo":
+            added_string_latin = "jo"
+            added_string_hiragana = "じょ"
+            added_string_katakana = "ジョ"
+        elif added_string == "jya":
+            added_string_latin = "jya"
+            added_string_hiragana = "じゃ"
+            added_string_katakana = "ジャ"
+        elif added_string == "jye":
+            added_string_latin = "jye"
+            added_string_hiragana = "じぇ"
+            added_string_katakana = "ジェ"
+        elif added_string == "jyi":
+            added_string_latin = "jyi"
+            added_string_hiragana = "じぃ"
+            added_string_katakana = "ジィ"
+        elif added_string == "jyu":
+            added_string_latin = "jyu"
+            added_string_hiragana = "じゅ"
+            added_string_katakana = "ジュ"
+        elif added_string == "jyo":
+            added_string_latin = "jyo"
+            added_string_hiragana = "じょ"
+            added_string_katakana = "ジョ"
+        elif added_string == "ka":
+            added_string_latin = "ka"
+            added_string_hiragana = "か"
+            added_string_katakana = "カ"
+        elif added_string == "ki":
+            added_string_latin = "ki"
+            added_string_hiragana = "き"
+            added_string_katakana = "キ"
+        elif added_string == "ku":
+            added_string_latin = "ku"
+            added_string_hiragana = "く"
+            added_string_katakana = "ク"
+        elif added_string == "ke":
+            added_string_latin = "ke"
+            added_string_hiragana = "け"
+            added_string_katakana = "ケ"
+        elif added_string == "ko":
+            added_string_latin = "ko"
+            added_string_hiragana = "こ"
+            added_string_katakana = "コ"
+        elif added_string == "kya":
+            added_string_latin = "kya"
+            added_string_hiragana = "きゃ"
+            added_string_katakana = "キャ"
+        elif added_string == "kye":
+            added_string_latin = "kye"
+            added_string_hiragana = "きぇ"
+            added_string_katakana = "キェ"
+        elif added_string == "kyi":
+            added_string_latin = "kyi"
+            added_string_hiragana = "きぃ"
+            added_string_katakana = "キィ"
+        elif added_string == "kyu":
+            added_string_latin = "kyu"
+            added_string_hiragana = "きゅ"
+            added_string_katakana = "キュ"
+        elif added_string == "kyo":
+            added_string_latin = "kyo"
+            added_string_hiragana = "きょ"
+            added_string_katakana = "キョ"
+        elif added_string == "ma":
+            added_string_latin = "ma"
+            added_string_hiragana = "ま"
+            added_string_katakana = "マ"
+        elif added_string == "mi":
+            added_string_latin = "mi"
+            added_string_hiragana = "み"
+            added_string_katakana = "ミ"
+        elif added_string == "mu":
+            added_string_latin = "mu"
+            added_string_hiragana = "む"
+            added_string_katakana = "ム"
+        elif added_string == "me":
+            added_string_latin = "me"
+            added_string_hiragana = "め"
+            added_string_katakana = "メ"
+        elif added_string == "mo":
+            added_string_latin = "mo"
+            added_string_hiragana = "も"
+            added_string_katakana = "モ"
+        elif added_string == "mya":
+            added_string_latin = "mya"
+            added_string_hiragana = "みゃ"
+            added_string_katakana = "ミャ"
+        elif added_string == "myu":
+            added_string_latin = "myu"
+            added_string_hiragana = "みゅ"
+            added_string_katakana = "ミュ"
+        elif added_string == "myi":
+            added_string_latin = "myi"
+            added_string_hiragana = "みぃ"
+            added_string_katakana = "ミィ"
+        elif added_string == "mye":
+            added_string_latin = "mye"
+            added_string_hiragana = "みぇ"
+            added_string_katakana = "ミェ"
+        elif added_string == "myo":
+            added_string_latin = "myo"
+            added_string_hiragana = "みょ"
+            added_string_katakana = "ミョ"
+        elif added_string == "n":
+            added_string_latin = "n"
+            added_string_hiragana = "ん"
+            added_string_katakana = "ン"
+        elif added_string == "n'":
+            added_string_latin = "n'"
+            added_string_hiragana = "ん"
+            added_string_katakana = "ン"
+        elif added_string == "na":
+            added_string_latin = "na"
+            added_string_hiragana = "な"
+            added_string_katakana = "ナ"
+        elif added_string == "ni":
+            added_string_latin = "ni"
+            added_string_hiragana = "に"
+            added_string_katakana = "ニ"
+        elif added_string == "nu":
+            added_string_latin = "nu"
+            added_string_hiragana = "ぬ"
+            added_string_katakana = "ヌ"
+        elif added_string == "ne":
+            added_string_latin = "ne"
+            added_string_hiragana = "ね"
+            added_string_katakana = "ネ"
+        elif added_string == "no":
+            added_string_latin = "no"
+            added_string_hiragana = "の"
+            added_string_katakana = "ノ"
+        elif added_string == "nya":
+            added_string_latin = "nya"
+            added_string_hiragana = "にゃ"
+            added_string_katakana = "ニャ"
+        elif added_string == "nyu":
+            added_string_latin = "nyu"
+            added_string_hiragana = "にゅ"
+            added_string_katakana = "ニュ"
+        elif added_string == "nye":
+            added_string_latin = "nye"
+            added_string_hiragana = "にぇ"
+            added_string_katakana = "ニェ"
+        elif added_string == "nyi":
+            added_string_latin = "nyi"
+            added_string_hiragana = "にぃ"
+            added_string_katakana = "ニィ"
+        elif added_string == "nyo":
+            added_string_latin = "nyo"
+            added_string_hiragana = "にょ"
+            added_string_katakana = "ニョ"
+        elif added_string == "o":
+            added_string_latin = "o"
+            added_string_hiragana = "お"
+            added_string_katakana = "オ"
+        elif added_string == "pa":
+            added_string_latin = "pa"
+            added_string_hiragana = "ぱ"
+            added_string_katakana = "パ"
+        elif added_string == "pi":
+            added_string_latin = "pi"
+            added_string_hiragana = "ぴ"
+            added_string_katakana = "ビ"
+        elif added_string == "pu":
+            added_string_latin = "pu"
+            added_string_hiragana = "ぷ"
+            added_string_katakana = "プ"
+        elif added_string == "pe":
+            added_string_latin = "pe"
+            added_string_hiragana = "ぺ"
+            added_string_katakana = "ペ"
+        elif added_string == "po":
+            added_string_latin = "po"
+            added_string_hiragana = "ぽ"
+            added_string_katakana = "ポ"
+        elif added_string == "pya":
+            added_string_latin = "pya"
+            added_string_hiragana = "ぴゃ"
+            added_string_katakana = "ピャ"
+        elif added_string == "pyu":
+            added_string_latin = "pyu"
+            added_string_hiragana = "ぴゅ"
+            added_string_katakana = "ピュ"
+        elif added_string == "pyi":
+            added_string_latin = "pyi"
+            added_string_hiragana = "ぴぃ"
+            added_string_katakana = "ピィ"
+        elif added_string == "pye":
+            added_string_latin = "pye"
+            added_string_hiragana = "ぴぇ"
+            added_string_katakana = "ピェ"
+        elif added_string == "pyo":
+            added_string_latin = "pyo"
+            added_string_hiragana = "ぴょ"
+            added_string_katakana = "ピョ"
+        elif added_string == "ra":
+            added_string_latin = "ra"
+            added_string_hiragana = "ら"
+            added_string_katakana = "ラ"
+        elif added_string == "ri":
+            added_string_latin = "ri"
+            added_string_hiragana = "り"
+            added_string_katakana = "リ"
+        elif added_string == "ru":
+            added_string_latin = "ru"
+            added_string_hiragana = "る"
+            added_string_katakana = "ル"
+        elif added_string == "re":
+            added_string_latin = "re"
+            added_string_hiragana = "れ"
+            added_string_katakana = "レ"
+        elif added_string == "ro":
+            added_string_latin = "ro"
+            added_string_hiragana = "ろ"
+            added_string_katakana = "ロ"
+        elif added_string == "rya":
+            added_string_latin = "rya"
+            added_string_hiragana = "りゃ"
+            added_string_katakana = "リャ"
+        elif added_string == "ryu":
+            added_string_latin = "ryu"
+            added_string_hiragana = "りゅ"
+            added_string_katakana = "リュ"
+        elif added_string == "ryi":
+            added_string_latin = "ryi"
+            added_string_hiragana = "りぃ"
+            added_string_katakana = "リィ"
+        elif added_string == "rye":
+            added_string_latin = "rye"
+            added_string_hiragana = "りぇ"
+            added_string_katakana = "リェ"
+        elif added_string == "ryo":
+            added_string_latin = "ryo"
+            added_string_hiragana = "りょ"
+            added_string_katakana = "リョ"
+        elif added_string == "sa":
+            added_string_latin = "sa"
+            added_string_hiragana = "さ"
+            added_string_katakana = "サ"
+        elif added_string == "si":
+            added_string_latin = "si"
+            added_string_hiragana = "＊"
+            added_string_katakana = "＊"
+        elif added_string == "su":
+            added_string_latin = "su"
+            added_string_hiragana = "す"
+            added_string_katakana = "ス"
+        elif added_string == "se":
+            added_string_latin = "se"
+            added_string_hiragana = "せ"
+            added_string_katakana = "セ"
+        elif added_string == "so":
+            added_string_latin = "so"
+            added_string_hiragana = "そ"
+            added_string_katakana = "ソ"
+        elif added_string == "sha":
+            added_string_latin = "sha"
+            added_string_hiragana = "しゃ"
+            added_string_katakana = "シャ"
+        elif added_string == "shi":
+            added_string_latin = "shi"
+            added_string_hiragana = "し"
+            added_string_katakana = "シ"
+        elif added_string == "shu":
+            added_string_latin = "shu"
+            added_string_hiragana = "しゅ"
+            added_string_katakana = "シュ"
+        elif added_string == "she":
+            added_string_latin = "she"
+            added_string_hiragana = "しぇ"
+            added_string_katakana = "シェ"
+        elif added_string == "sho":
+            added_string_latin = "sho"
+            added_string_hiragana = "しょ"
+            added_string_katakana = "ショ"
+        elif added_string == "sya":
+            added_string_latin = "sya"
+            added_string_hiragana = "＊"
+            added_string_katakana = "＊"
+        elif added_string == "syu":
+            added_string_latin = "syu"
+            added_string_hiragana = "＊"
+            added_string_katakana = "＊"
+        elif added_string == "syo":
+            added_string_latin = "syo"
+            added_string_hiragana = "＊"
+            added_string_katakana = "＊"
+        elif added_string == "ta":
+            added_string_latin = "ta"
+            added_string_hiragana = "た"
+            added_string_katakana = "タ"
+        elif added_string == "ti":
+            added_string_latin = "ti"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ティ"
+        elif added_string == "tu":
+            added_string_latin = "tu"
+            added_string_hiragana = "＊"
+            added_string_katakana = "テュ"
+        elif added_string == "te":
+            added_string_latin = "te"
+            added_string_hiragana = "て"
+            added_string_katakana = "テ"
+        elif added_string == "to":
+            added_string_latin = "to"
+            added_string_hiragana = "と"
+            added_string_katakana = "ト"
+        elif added_string == "tsu":
+            added_string_latin = "tsu"
+            added_string_hiragana = "つ"
+            added_string_katakana = "ツ"
+        elif added_string == "u":
+            added_string_latin = "u"
+            added_string_hiragana = "う"
+            added_string_katakana = "ウ"
+        elif added_string == "va":
+            added_string_latin = "va"
+            added_string_hiragana = "ヴぁ"
+            added_string_katakana = "ヴァ"
+        elif added_string == "vi":
+            added_string_latin = "vi"
+            added_string_hiragana = "ヴぃ"
+            added_string_katakana = "ヴィ"
+        elif added_string == "vu":
+            added_string_latin = "vu"
+            added_string_hiragana = "ヴ"
+            added_string_katakana = "ヴ"
+        elif added_string == "ve":
+            added_string_latin = "ve"
+            added_string_hiragana = "ヴぇ"
+            added_string_katakana = "ヴェ"
+        elif added_string == "vo":
+            added_string_latin = "vo"
+            added_string_hiragana = "ヴぉ"
+            added_string_katakana = "ヴォ"
+        elif added_string == "wa":
+            added_string_latin = "wa"
+            added_string_hiragana = "わ"
+            added_string_katakana = "ワ"
+        elif added_string == "wi":
+            added_string_latin = "wi"
+            added_string_hiragana = "うぃ"
+            added_string_katakana = "ウィ"
+        elif added_string == "wu":
+            added_string_latin = "wu"
+            added_string_hiragana = "う"
+            added_string_katakana = "ウ"
+        elif added_string == "we":
+            added_string_latin = "we"
+            added_string_hiragana = "うぇ"
+            added_string_katakana = "ウェ"
+        elif added_string == "wo":
+            added_string_latin = "wo"
+            added_string_hiragana = "を"
+            added_string_katakana = "ヲ"
+        elif added_string == "ya":
+            added_string_latin = "ya"
+            added_string_hiragana = "や"
+            added_string_katakana = "ヤ"
+        elif added_string == "yu":
+            added_string_latin = "yu"
+            added_string_hiragana = "ゆ"
+            added_string_katakana = "ユ"
+        elif added_string == "ye":
+            added_string_latin = "ye"
+            added_string_hiragana = "いぇ"
+            added_string_katakana = "イェ"
+        elif added_string == "yo":
+            added_string_latin = "yo"
+            added_string_hiragana = "よ"
+            added_string_katakana = "ヨ"
+        elif added_string == "za":
+            added_string_latin = "za"
+            added_string_hiragana = "ざ"
+            added_string_katakana = "ザ"
+        elif added_string == "zu":
+            added_string_latin = "zu"
+            added_string_hiragana = "ず"
+            added_string_katakana = "ズ"
+        elif added_string == "ze":
+            added_string_latin = "ze"
+            added_string_hiragana = "ぜ"
+            added_string_katakana = "ゼ"
+        elif added_string == "zo":
+            added_string_latin = "zo"
+            added_string_hiragana = "ぞ"
+            added_string_katakana = "ゾ"
+        elif added_string == "xwi":
+            added_string_latin = "wi"
+            added_string_hiragana = "ゐ"
+            added_string_katakana = "ヰ"
+        elif added_string == "xwe":
+            added_string_latin = "we"
+            added_string_hiragana = "ゑ"
+            added_string_katakana = "ヱ"
+        elif added_string == "*":
+            added_string_latin = "*"
+            added_string_hiragana = "＊"
+            added_string_katakana = "＊"
+        elif added_string == "a_double_vowel":
+            added_string_latin = "a"
+            added_string_hiragana = "あ"
+            added_string_katakana = "ー"
+        elif added_string == "e_double_vowel":
+            added_string_latin = "e"
+            added_string_hiragana = "え"
+            added_string_katakana = "ー"
+        elif added_string == "i_double_vowel":
+            added_string_latin = "i"
+            added_string_hiragana = "い"
+            added_string_katakana = "ー"
+        elif added_string == "o_double_vowel":
+            added_string_latin = "o"
+            added_string_hiragana = "お"
+            added_string_katakana = "ー"
+        elif added_string == "u_double_vowel":
+            added_string_latin = "u"
+            added_string_hiragana = "う"
+            added_string_katakana = "ー"
+        elif added_string == "katakana_repeat_bar":
+
+            if added_string_last != "":
+                if added_string_last[-1] == "a":
+                    added_string_latin = "a"
+                    added_string_hiragana = "あ"
+                    added_string_katakana = "ー"
+                elif added_string_last[-1] == "i":
+                    added_string_latin = "i"
+                    added_string_hiragana = "い"
+                    added_string_katakana = "ー"
+                elif added_string_last[-1] == "u":
+                    added_string_latin = "u"
+                    added_string_hiragana = "う"
+                    added_string_katakana = "ー"
+                elif added_string_last[-1] == "e":
+                    added_string_latin = "e"
+                    added_string_hiragana = "え"
+                    added_string_katakana = "ー"
+                elif added_string_last[-1] == "o":
+                    added_string_latin = "o"
+                    added_string_hiragana = "お"
+                    added_string_katakana = "ー"
+                elif added_string_last == "*":
+                    added_string_latin = ""
+                    added_string_hiragana = ""
+                    added_string_katakana = ""
+
+
+        elif added_string == "small_tsu":
+            added_string_latin = ""
+            added_string_hiragana = "っ"
+            added_string_katakana = "ッ"
+
+        if added_string_latin != "":
+            first_char = added_string_latin[0]
+        if added_string_last == "small_tsu":
+            if added_string_latin == "":
+                added_string_latin = "*"  # If the character after small_tsu is invalid (e.g. a kanji), this line prevents the program from crashing
+            else:
+                first_char = added_string_latin[0]
+                if first_char == 'a' or first_char == 'e' or first_char == 'i' or first_char == 'o' or first_char == 'u' or first_char == 'y':
+                    added_string_latin = "*" + added_string_latin
+                else:
+                    added_string_latin = first_char + added_string_latin
+
+        # Delimiters
+        elif character == ",":
+            added_string_latin = ", "
+            added_string_katakana = ", "
+            added_string_hiragana = ", "
+            if character_next == " ":
+                i += 1
+
+        elif added_string == "original":
+            added_string_latin = character
+            added_string_hiragana = character
+            added_string_katakana = character
+
+        output = [str(i), added_string_latin, added_string_hiragana, added_string_katakana]
 
         return output
