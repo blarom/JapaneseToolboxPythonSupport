@@ -4,9 +4,8 @@ import re
 import openpyxl
 from JapaneseToolboxConverter import Converter
 
-UNIQUE_DELIMITER = "---"
-
 current_entry = ''
+VERB_PARTS_OF_SPEECH = ['Vrui', 'Vbu', 'Vgu', 'Vku', 'Vmu', 'Vnu', 'Vru', 'Vsu', 'Vtsu', 'Vu', 'Vi', 'Viku', 'Vus', 'Varu', 'Vkuru', 'Vsuru']
 LEGEND_DICT = {
     'MA': 'ZM',
     'X': 'IES',
@@ -183,6 +182,7 @@ LEGEND_DICT = {
     'anat': 'ZAn'
 }
 MAX_NUM_SURU_VERBS_TO_ADD = 50
+UNIQUE_DELIMITER = "---"
 
 # region Preparations
 localWordsWorkbook = openpyxl.load_workbook(
@@ -284,7 +284,8 @@ with open("JMDict_e", encoding='utf-8') as infile:
             suru_kanji = ''
             types_as_string = '-'
             i = 0
-            currentPartOfSpeech = ''
+            partsOfSpeechFromLastSense = []
+            last_sense_is_result_of_sense_split = False
             create_suru_verb = False
             while i < len(senses):
 
@@ -292,7 +293,13 @@ with open("JMDict_e", encoding='utf-8') as infile:
                 matches = re.findall(r"<(pos|field|misc)>&(.+?);</(pos|field|misc)>", senses[i])
                 JMtypes = [match[1] for match in matches]
                 partsOfSpeech = [LEGEND_DICT[JMtype] for JMtype in JMtypes if LEGEND_DICT[JMtype] != '']
-                if len(partsOfSpeech) == 0: partsOfSpeech.append(currentPartOfSpeech)
+
+                posTypes = re.findall(r"<pos>&(.+?);</pos>", senses[i])
+                if not last_sense_is_result_of_sense_split:
+                    if len(posTypes) > 0:
+                        partsOfSpeechFromLastSense = [LEGEND_DICT[posType] for posType in posTypes if LEGEND_DICT[posType] != '']
+                    else:
+                        partsOfSpeech += partsOfSpeechFromLastSense
                 # endregion
 
                 # region Getting the TRANSITIVE status
@@ -303,72 +310,36 @@ with open("JMDict_e", encoding='utf-8') as infile:
                     trans = 'T'
                 elif "vt" in JMtypes:
                     trans = 'T'
-                # endregione
+                # endregion
 
                 # region If the word also includes a suru verb option, create a new sense for it
-                if "vs" in JMtypes \
-                        and (
-                            "n" in JMtypes
-                            or "adj-no" in JMtypes
-                            or "adj-i" in JMtypes
-                            or "adj-ix" in JMtypes
-                            or "adv" in JMtypes
-                            or "adv-to" in JMtypes
-                        ):
-                    senses.append(re.sub("<pos>&(n|adj-no|adj-na|adj-i|adj-ix|adv|adv-to);</pos>", "", senses[i]))
-                    senses[i] = senses[i].replace("<pos>&vs;</pos>", "")
-
-                    # Rebuilding JMTypes without the suru verb reference
-                    matches = re.findall(r"<(pos|field|misc)>&(.+?);</(pos|field|misc)>", senses[i])
-                    JMtypes = [match[1] for match in matches]
-                    partsOfSpeech = [LEGEND_DICT[JMtype] for JMtype in JMtypes if LEGEND_DICT[JMtype] != '']
-                    if len(partsOfSpeech) == 0: partsOfSpeech.append(currentPartOfSpeech)
+                if "Vsuru" in partsOfSpeech \
+                        and ("N" in partsOfSpeech or "Ano" in partsOfSpeech or "Ai" in partsOfSpeech or "A" in partsOfSpeech or "Ato" in partsOfSpeech):
+                            senses.append(re.sub("<pos>&(n|adj-no|adj-na|adj-i|adj-ix|adv|adv-to);</pos>", "", senses[i]))
+                            partsOfSpeech.remove("Vsuru")
                 # endregion
 
                 # region If the word includes both na-adj and noun forms, split them into two senses
-                if "adj-na" in JMtypes and "n" in JMtypes:
+                if "Ana" in partsOfSpeech and "N" in partsOfSpeech:
                     senses.insert(i+1, senses[i].replace("<pos>&n;</pos>", ""))
-                    senses[i] = senses[i].replace("<pos>&adj-na;</pos>", "")
-
-                    # Rebuilding JMTypes without the adj-na reference
-                    matches = re.findall(r"<(pos|field|misc)>&(.+?);</(pos|field|misc)>", senses[i])
-                    JMtypes = [match[1] for match in matches]
-                    partsOfSpeech = [LEGEND_DICT[JMtype] for JMtype in JMtypes if LEGEND_DICT[JMtype] != '']
-                    if len(partsOfSpeech) == 0: partsOfSpeech.append(currentPartOfSpeech)
+                    partsOfSpeech.remove("Ana")
+                    last_sense_is_result_of_sense_split = True
+                else:
+                    last_sense_is_result_of_sense_split = False
                 # endregion
 
-                # region Preparing the type depending on whether the word is a verb or not
+                # region Adding T/I to the part of speech if it is a verb
                 type_is_verb = False
                 is_suru_verb = False
-                for partOfSpeech in partsOfSpeech:
-                    if partOfSpeech == 'Vrui' or \
-                            partOfSpeech == 'Vbu' or \
-                            partOfSpeech == 'Vgu' or \
-                            partOfSpeech == 'Vku' or \
-                            partOfSpeech == 'Vmu' or \
-                            partOfSpeech == 'Vnu' or \
-                            partOfSpeech == 'Vru' or \
-                            partOfSpeech == 'Vsu' or \
-                            partOfSpeech == 'Vtsu' or \
-                            partOfSpeech == 'Vu' or \
-                            partOfSpeech == 'Vi' or \
-                            partOfSpeech == 'Vkuru' or \
-                            partOfSpeech == 'Vsuru':
-                        currentPartOfSpeech = partOfSpeech + trans
-                        if partOfSpeech == 'Vsuru': is_suru_verb = True
+                for j in range(len(partsOfSpeech)):
+                    if partsOfSpeech[j] in VERB_PARTS_OF_SPEECH:
+                        partsOfSpeech[j] = partsOfSpeech[j] + trans
                         type_is_verb = True
-                        break
-
-                    elif partOfSpeech != '':
-                        currentPartOfSpeech = partOfSpeech
-                        types.append(currentPartOfSpeech)
-
-                if not type_is_verb:
-                    currentPartOfSpeech = ";".join(types)
+                        if 'Vsuru' in partsOfSpeech[j]: is_suru_verb = True
                 # endregion
 
-                # region Removing type duplicates
-                currentPartOfSpeech = ";".join(list(set(currentPartOfSpeech.split(";"))))
+                # region Removing part of speech duplicates
+                partsOfSpeech = list(set(partsOfSpeech))
                 # endregion
 
                 # region Getting the meaning
@@ -379,7 +350,7 @@ with open("JMDict_e", encoding='utf-8') as infile:
 
                 # region Setting the word characteristics
                 if is_suru_verb:
-                    types_for_suru_verb.append(currentPartOfSpeech)
+                    types_for_suru_verb.append(';'.join(partsOfSpeech))
                     english_meanings_for_suru_verb.append(english_meanings_as_string)
                     suru_altSpellings = []
                     for altSpelling in altSpellings:
@@ -391,7 +362,7 @@ with open("JMDict_e", encoding='utf-8') as infile:
                     suru_kanji = kanji + "する"
                     create_suru_verb = True
                 else:
-                    types_for_word.append(currentPartOfSpeech)
+                    types_for_word.append(';'.join(partsOfSpeech))
                     english_meanings_for_word.append(english_meanings_as_string)
                 # endregion
 
@@ -402,23 +373,9 @@ with open("JMDict_e", encoding='utf-8') as infile:
             # region Cleaning the types after sense repetition
             for i in range(len(english_meanings_for_word)):
                 if i > 0 and english_meanings_for_word[i] == english_meanings_for_word[i - 1]:
-                    lastTypes = types_for_word[i - 1].split(";")
-                    currentTypes = types_for_word[i].split(";")
-                    newCurrentTypes = []
-                    for currentType in currentTypes:
-                        if currentType not in lastTypes: newCurrentTypes.append(currentType)
-                    types_for_word[i] = ";".join(newCurrentTypes)
-            # endregion
-
-            # region Duplicating leftover meanings if the type must be split (e.g. N;Nan)
-            i = 0
-            while i < len(english_meanings_for_word):
-                if i > 1 and english_meanings_for_word[i-2] == english_meanings_for_word[i - 1]:
-                    currentTypes = types_for_word[i].split(";")
-                    if "N" in currentTypes and "NAn" in currentTypes:
-                        english_meanings_for_word.insert(i+1, english_meanings_for_word[i])
-                        types_for_word[i] = ";".join([currentType for currentType in currentTypes if currentType != "NAn"])
-                        types_for_word.insert(i+1, ";".join([currentType for currentType in currentTypes if currentType != "N"]))
+                    lastTypes = types_for_word[i - 1].split(';')
+                    currentTypes = types_for_word[i].split(';')
+                    types_for_word[i] = ";".join([currentType for currentType in currentTypes if currentType not in lastTypes])
             # endregion
 
             # region Creating the words
@@ -521,9 +478,6 @@ while True:
 verbsIndex = 1
 
 print("total number of words after words filter: " + str(len(workingWordsList)))
-# print("last words:")
-# for i in range(len(workingWordsList)-10, len(workingWordsList)):
-#     print(workingWordsList[i])
 
 while True:
     romaji = wsLocalVerbsForGrammar.cell(row=verbsIndex, column=3).value
@@ -546,9 +500,6 @@ while True:
     verbsIndex += 1
 
 print("total number of words after verbs filter: " + str(len(workingWordsList)))
-# print("last suru verbs:")
-# for i in range(len(workingSuruVerbsList)-10, len(workingSuruVerbsList)):
-#     print(workingSuruVerbsList[i])
 
 print("total number of suru verbs after filter: " + str(len(workingSuruVerbsList)))
 # endregion
@@ -651,6 +602,7 @@ for word in workingSuruVerbsList:
 
 # endregion
 
-# Saving the results
+# region Saving the results
 localWordsWorkbook.save(
     filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - updated with JMDict_english.xlsx')
+# endregion
