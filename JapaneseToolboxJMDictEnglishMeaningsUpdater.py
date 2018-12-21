@@ -181,7 +181,7 @@ LEGEND_DICT = {
     'joc': 'ZH',
     'anat': 'ZAn'
 }
-MAX_NUM_SURU_VERBS_TO_ADD = 20
+MAX_NUM_SURU_VERBS_TO_ADD = 50
 UNIQUE_DELIMITER = "---"
 
 # region Preparations
@@ -357,6 +357,14 @@ with open("JMDict_e", encoding='utf-8') as infile:
                 # endregion
 
                 # region Reordering parts of speech
+                if "NAdv" in partsOfSpeech:
+                    partsOfSpeech.remove("NAdv")
+                    partsOfSpeech.insert(0, "NAdv")
+
+                if "Ano" in partsOfSpeech:
+                    partsOfSpeech.remove("Ano")
+                    partsOfSpeech.insert(0, "Ano")
+
                 if "A" in partsOfSpeech:
                     partsOfSpeech.remove("A")
                     partsOfSpeech.insert(0, "A")
