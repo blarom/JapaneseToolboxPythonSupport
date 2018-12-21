@@ -78,7 +78,7 @@ while " suru" in wsLocalTypes.cell(row=typesSheetIndex, column=3).value:
     wsLocalVerbs.cell(row=verbSheetIndex, column=9).value = romaji[:-4]
     wsLocalVerbs.cell(row=verbSheetIndex, column=8).value = kanji[:-2]
     wsLocalVerbs.cell(row=verbSheetIndex, column=13).value = kanji[:-2]
-    wsLocalVerbs.cell(row=verbSheetIndex, column=10).value = 68
+    wsLocalVerbs.cell(row=verbSheetIndex, column=10).value = wsLocalVerbs.cell(row=lastLocalVerbsIndex, column=10).value
 
     meaningIndexStrings = meanings.split(";")
     combinedMeanings = ""
@@ -121,7 +121,7 @@ while not wsLocalTypes.cell(row=typesSheetIndex, column=2).value:
     for index in range(len(meaningIndexStrings)):
         meaningIndexValue = int(meaningIndexStrings[index])
         currentMeaning = str(wsLocalMeanings.cell(row=meaningIndexValue, column=2).value).strip().replace("\u200b", "")
-        currentType = str(wsLocalMeanings.cell(row=meaningIndexValue, column=3).value).strip().replace("\u200b", "")
+        currentType = str(wsLocalMeanings.cell(row=meaningIndexValue, column=3).value).strip().replace("\u200b", "").split(";")[0]
 
         # Adding the meaning to the lot
         if index > 0: combinedMeanings += ", "

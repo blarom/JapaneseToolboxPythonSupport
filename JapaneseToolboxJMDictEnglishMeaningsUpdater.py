@@ -5,7 +5,7 @@ import openpyxl
 from JapaneseToolboxConverter import Converter
 
 current_entry = ''
-VERB_PARTS_OF_SPEECH = ['Vrui', 'Vbu', 'Vgu', 'Vku', 'Vmu', 'Vnu', 'Vru', 'Vsu', 'Vtsu', 'Vu', 'Vi', 'Viku', 'Vus', 'Varu', 'Vkuru', 'Vsuru']
+VERB_PARTS_OF_SPEECH = ['Vrui', 'Vbu', 'Vgu', 'Vku', 'Vmu', 'Vnu', 'Vrug', 'Vsu', 'Vtsu', 'Vu', 'Vi', 'Viku', 'Vus', 'Varu', 'Vkuru', 'Vsuru']
 LEGEND_DICT = {
     'MA': 'ZM',
     'X': 'IES',
@@ -27,7 +27,7 @@ LEGEND_DICT = {
     'Buddh': 'ZB',
     'chem': 'ZC',
     'chn': 'ZCL',
-    'col': 'CEC',
+    'col': 'coq',
     'comp': 'ZI',
     'conj': 'CO',
     'cop-da': '',
@@ -95,15 +95,15 @@ LEGEND_DICT = {
     'v5k-s': 'Viku',
     'v5m': 'Vmu',
     'v5n': 'Vnu',
-    'v5r': 'Vru',
-    'v5r-i': '',
+    'v5r': 'Vrug',
+    'v5r-i': 'Vrug',
     'v5s': 'Vsu',
     'v5t': 'Vtsu',
     'v5u': 'Vu',
     'v5u-s': 'Vus',
     'v5uru': '',
     'vz': 'Vrui',
-    'vi': 'Vi',
+    'vi': 'intransitive',
     'vk': 'Vkuru',
     'vn': '',
     'vr': '',
@@ -122,7 +122,7 @@ LEGEND_DICT = {
     'rkb': '',
     'nab': '',
     'hob': '',
-    'vt': 'Vt',
+    'vt': 'transitive',
     'vulg': 'vul',
     'adj-kari': '',
     'adj-ku': '',
@@ -181,7 +181,7 @@ LEGEND_DICT = {
     'joc': 'ZH',
     'anat': 'ZAn'
 }
-MAX_NUM_SURU_VERBS_TO_ADD = 50
+MAX_NUM_SURU_VERBS_TO_ADD = 20
 UNIQUE_DELIMITER = "---"
 
 # region Preparations
@@ -270,8 +270,20 @@ with open("JMDict_e", encoding='utf-8') as infile:
                 continue
             # endregion
 
-            # region Getting the types/meanings and suru verb characteristics
+            # region Fixing the senses with missing parts of speech
             senses = re.findall(r"<sense>(.+?)</sense>", current_entry, re.DOTALL)
+            for i in range(len(senses)-1, 0, -1):
+                posTypes = re.findall(r"<pos>&(.+?);</pos>", senses[i])
+                if len(posTypes) == 0:
+                    for j in range(i-1, -1, -1):
+                        posTypesPrev = re.findall(r"<pos>&(.+?);</pos>", senses[j])
+                        if len(posTypesPrev) > 0:
+                            for posTypePrev in posTypesPrev:
+                                senses[i] = r"<pos>&"+posTypePrev+";</pos>" + senses[i]
+                            break
+            # endregion
+
+            # region Getting the types/meanings and suru verb characteristics
             types = []
             english_meanings = []
             types_for_word = []
@@ -283,49 +295,51 @@ with open("JMDict_e", encoding='utf-8') as infile:
             suru_romaji = ''
             suru_kanji = ''
             types_as_string = '-'
-            i = 0
             partsOfSpeechFromLastSense = []
             last_sense_is_result_of_sense_split = False
             create_suru_verb = False
+            i = 0
             while i < len(senses):
+
+                if len(senses)>30:
+                    a=1
 
                 # region Getting the list of JMtypes
                 matches = re.findall(r"<(pos|field|misc)>&(.+?);</(pos|field|misc)>", senses[i])
                 JMtypes = [match[1] for match in matches]
-                partsOfSpeech = [LEGEND_DICT[JMtype] for JMtype in JMtypes if LEGEND_DICT[JMtype] != '']
-
-                posTypes = re.findall(r"<pos>&(.+?);</pos>", senses[i])
-                if not last_sense_is_result_of_sense_split:
-                    if len(posTypes) > 0:
-                        partsOfSpeechFromLastSense = [LEGEND_DICT[posType] for posType in posTypes if LEGEND_DICT[posType] != '']
-                    else:
-                        partsOfSpeech += partsOfSpeechFromLastSense
+                partsOfSpeech = ';'.join([LEGEND_DICT[JMtype] for JMtype in JMtypes if LEGEND_DICT[JMtype] != '']).split(';')
+                partsOfSpeech = list(set(partsOfSpeech))
                 # endregion
 
                 # region Getting the TRANSITIVE status
                 trans = 'I'
-                if "vt" in JMtypes and "vi" in JMtypes:
+                if "transitive" in partsOfSpeech and "intransitive" in partsOfSpeech:
                     senses.append(senses[i].replace("<pos>&vt;</pos>", ""))
-                    senses[i] = senses[i].replace("<pos>&vi;</pos>", "")
                     trans = 'T'
-                elif "vt" in JMtypes:
+                    partsOfSpeech.remove("transitive")
+                    partsOfSpeech.remove("intransitive")
+                elif "transitive" in partsOfSpeech:
                     trans = 'T'
-                # endregion
+                    partsOfSpeech.remove("transitive")
+                elif "intransitive" in partsOfSpeech:
+                    trans = 'I'
+                    partsOfSpeech.remove("intransitive")
 
-                # region If the word also includes a suru verb option, create a new sense for it
-                if "Vsuru" in partsOfSpeech \
-                        and ("N" in partsOfSpeech or "Ano" in partsOfSpeech or "Ai" in partsOfSpeech or "A" in partsOfSpeech or "Ato" in partsOfSpeech):
-                            senses.append(re.sub("<pos>&(n|adj-no|adj-na|adj-i|adj-ix|adv|adv-to);</pos>", "", senses[i]))
-                            partsOfSpeech.remove("Vsuru")
                 # endregion
 
                 # region If the word includes both na-adj and noun forms, split them into two senses
                 if "Ana" in partsOfSpeech and "N" in partsOfSpeech:
-                    senses.insert(i+1, senses[i].replace("<pos>&n;</pos>", ""))
+                    senses.insert(i+1, re.sub(r"<pos>&(n|adj-no|n-suf|n-pref|n-adv);</pos>", "", senses[i]))
                     partsOfSpeech.remove("Ana")
-                    last_sense_is_result_of_sense_split = True
-                else:
-                    last_sense_is_result_of_sense_split = False
+                    if "Vsuru" in partsOfSpeech: partsOfSpeech.remove("Vsuru")
+                # endregion
+
+                # region If the word includes a suru verb option, create a new sense for it
+                if "Vsuru" in partsOfSpeech \
+                        and ("N" in partsOfSpeech or "Ano" in partsOfSpeech or "Ana" in partsOfSpeech
+                             or "Ai" in partsOfSpeech or "A" in partsOfSpeech or "Ato" in partsOfSpeech):
+                            senses.append(re.sub("<pos>&((?!vs).)*;</pos>", "", senses[i])) # removes any pos that is not vs
+                            partsOfSpeech.remove("Vsuru")
                 # endregion
 
                 # region Adding T/I to the part of speech if it is a verb
@@ -340,6 +354,21 @@ with open("JMDict_e", encoding='utf-8') as infile:
 
                 # region Removing part of speech duplicates
                 partsOfSpeech = list(set(partsOfSpeech))
+                # endregion
+
+                # region Reordering parts of speech
+                if "A" in partsOfSpeech:
+                    partsOfSpeech.remove("A")
+                    partsOfSpeech.insert(0, "A")
+
+                if "N" in partsOfSpeech:
+                    partsOfSpeech.remove("N")
+                    partsOfSpeech.insert(0, "N")
+
+                verbPOS = [element for element in partsOfSpeech if element[:-1] in VERB_PARTS_OF_SPEECH]
+                if len(verbPOS) > 0:
+                    partsOfSpeech.remove(verbPOS[0])
+                    partsOfSpeech.insert(0, verbPOS[0])
                 # endregion
 
                 # region Getting the meaning
@@ -590,7 +619,7 @@ for word in workingSuruVerbsList:
         wsLocalMeanings.cell(row=availableMeaningsIndex, column=1).value = availableMeaningsIndex
         wsLocalMeanings.cell(row=availableMeaningsIndex, column=2).value = meaning
         wsLocalMeanings.cell(row=availableMeaningsIndex, column=3).value = currentPartOfSpeech
-        wsLocalMeanings.cell(row=availableMeaningsIndex, column=9).value = 'JM'
+        wsLocalMeanings.cell(row=availableMeaningsIndex, column=9).value = 'LOC'
 
         meaningIndexes.append(str(availableMeaningsIndex))
         availableMeaningsIndex += 1
