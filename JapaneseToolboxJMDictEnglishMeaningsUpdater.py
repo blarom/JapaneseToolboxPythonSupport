@@ -19,7 +19,7 @@ LEGEND_DICT = {
     'adj-f': 'Af',
     'adv': 'A',
     'adv-to': 'Ato',
-    'arch': '',
+    'arch': 'ar',
     'ateji': '',
     'aux': '',
     'aux-v': 'Vx',
@@ -357,6 +357,14 @@ with open("JMDict_e", encoding='utf-8') as infile:
                 # endregion
 
                 # region Reordering parts of speech
+                if "Ai" in partsOfSpeech:
+                    partsOfSpeech.remove("Ai")
+                    partsOfSpeech.insert(0, "Ai")
+
+                if "Ana" in partsOfSpeech:
+                    partsOfSpeech.remove("Ana")
+                    partsOfSpeech.insert(0, "Ana")
+
                 if "NAdv" in partsOfSpeech:
                     partsOfSpeech.remove("NAdv")
                     partsOfSpeech.insert(0, "NAdv")
@@ -382,7 +390,7 @@ with open("JMDict_e", encoding='utf-8') as infile:
                 # region Getting the meaning
                 matches = re.findall(r"<(gloss|gloss g_type=\"expl\")?>(.+?)</gloss>", senses[i], re.U)
                 english_meanings = [match[1] for match in matches]
-                english_meanings_as_string = ", ".join(english_meanings)
+                english_meanings_as_string = ", ".join(english_meanings).replace("&,", "&")
                 # endregion
 
                 # region Setting the word characteristics

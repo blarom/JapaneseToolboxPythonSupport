@@ -78,7 +78,7 @@ while " suru" in wsLocalTypes.cell(row=typesSheetIndex, column=3).value:
     wsLocalVerbs.cell(row=verbSheetIndex, column=9).value = romaji[:-4]
     wsLocalVerbs.cell(row=verbSheetIndex, column=8).value = kanji[:-2]
     wsLocalVerbs.cell(row=verbSheetIndex, column=13).value = kanji[:-2]
-    wsLocalVerbs.cell(row=verbSheetIndex, column=10).value = wsLocalVerbs.cell(row=lastLocalVerbsIndex, column=10).value
+    wsLocalVerbs.cell(row=verbSheetIndex, column=10).value = wsLocalVerbs.cell(row=lastLocalVerbsIndex-1, column=10).value
 
     meaningIndexStrings = meanings.split(";")
     combinedMeanings = ""
