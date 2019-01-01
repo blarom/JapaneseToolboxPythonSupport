@@ -181,7 +181,7 @@ LEGEND_DICT = {
     'joc': 'ZH',
     'anat': 'ZAn'
 }
-MAX_NUM_SURU_VERBS_TO_ADD = 50
+MAX_NUM_SURU_VERBS_TO_ADD = 100
 UNIQUE_DELIMITER = "---"
 
 # region Preparations
@@ -191,7 +191,7 @@ localVerbsWorkbook = openpyxl.load_workbook(
     filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
 wsLocalMeanings = localWordsWorkbook["Meanings"]
 wsLocalTypes = localWordsWorkbook["Types"]
-wsLocalVerbsForGrammar = localVerbsWorkbook["VerbsForGrammar"]
+wsLocalVerbs = localVerbsWorkbook["Verbs"]
 
 
 class Word:
@@ -525,11 +525,17 @@ verbsIndex = 1
 print("total number of words after words filter: " + str(len(workingWordsList)))
 
 while True:
-    romaji = wsLocalVerbsForGrammar.cell(row=verbsIndex, column=3).value
-    kanji = wsLocalVerbsForGrammar.cell(row=verbsIndex, column=4).value
+    col1 = wsLocalVerbs.cell(row=verbsIndex, column=1).value
+    col2 = wsLocalVerbs.cell(row=verbsIndex, column=2).value
+    romaji = wsLocalVerbs.cell(row=verbsIndex, column=7).value
+    kanji = wsLocalVerbs.cell(row=verbsIndex, column=6).value
 
-    if romaji == "" or not romaji:
+    if col1 == "-" and col2 == "-":
         break
+
+    if (not romaji or romaji == "") or (not kanji or kanji == ""):
+        verbsIndex += 1
+        continue
 
     uniqueID = romaji + UNIQUE_DELIMITER + kanji
     #print(uniqueID + "\n")
