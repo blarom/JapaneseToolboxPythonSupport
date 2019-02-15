@@ -137,7 +137,18 @@ class Converter:
                 added_string = "ki"
 
         elif character == "く":
-            added_string = "ku"
+            if character_next == "ゃ":
+                added_string = "kwa"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "ku"
+
         elif character == "け":
             added_string = "ke"
         elif character == "こ":
@@ -159,7 +170,18 @@ class Converter:
                 added_string = "gi"
 
         elif character == "ぐ":
-            added_string = "gu"
+            if character_next == "ゃ":
+                added_string = "gwa"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ょ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "gu"
+
         elif character == "げ":
             added_string = "ge"
         elif character == "ご":
@@ -581,7 +603,18 @@ class Converter:
                 added_string = "ki"
 
         elif character == "ク":
-            added_string = "ku"
+            if character_next == "ァ":
+                added_string = "kwa"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "ku"
+
         elif character == "ケ":
             added_string = "ke"
         elif character == "コ":
@@ -614,7 +647,17 @@ class Converter:
                 added_string = "gi"
 
         elif character == "グ":
-            added_string = "gu"
+            if character_next == "ァ":
+                added_string = "gwa"
+                i += 1
+            elif character_next == "ュ":
+                added_string = "*"
+                i += 1
+            elif character_next == "ョ":
+                added_string = "*"
+                i += 1
+            else:
+                added_string = "gu"
         elif character == "ゲ":
             added_string = "ge"
         elif character == "ゴ":
@@ -2038,6 +2081,10 @@ class Converter:
             added_string_latin = "go"
             added_string_hiragana = "ご"
             added_string_katakana = "ゴ"
+        elif added_string == "gwa":
+            added_string_latin = "gwa"
+            added_string_hiragana = "ぐゎ"
+            added_string_katakana = "グァ"
         elif added_string == "gya":
             added_string_latin = "gya"
             added_string_hiragana = "ぎゃ"
@@ -2162,6 +2209,10 @@ class Converter:
             added_string_latin = "ko"
             added_string_hiragana = "こ"
             added_string_katakana = "コ"
+        elif added_string == "kwa":
+            added_string_latin = "kwa"
+            added_string_hiragana = "くゎ"
+            added_string_katakana = "クァ"
         elif added_string == "kya":
             added_string_latin = "kya"
             added_string_hiragana = "きゃ"
