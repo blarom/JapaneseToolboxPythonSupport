@@ -242,16 +242,16 @@ class Converter:
 
         elif character == "ぢ":
             if character_next == "ゃ":
-                added_string = "*"
+                added_string = "dya"
                 i += 1
             elif character_next == "ゅ":
-                added_string = "*"
+                added_string = "dyu"
                 i += 1
             elif character_next == "ぇ":
                 added_string = "*"
                 i += 1
             elif character_next == "ょ":
-                added_string = "*"
+                added_string = "dyo"
                 i += 1
             else:
                 added_string = "di"
@@ -274,16 +274,19 @@ class Converter:
 
         elif character == "づ":
             if character_next == "ぁ":
-                added_string = "da"
+                added_string = "*"
+                i += 1
+            elif character_next == "ゅ":
+                added_string = "*"
                 i += 1
             elif character_next == "ぃ":
-                added_string = "di"
+                added_string = "*"
                 i += 1
             elif character_next == "ぇ":
-                added_string = "de"
+                added_string = "*"
                 i += 1
             elif character_next == "ぉ":
-                added_string = "do"
+                added_string = "*"
                 i += 1
             else:
                 added_string = "du"
@@ -1931,6 +1934,26 @@ class Converter:
             added_string_latin = "djo"
             added_string_hiragana = "＊"
             added_string_katakana = "ヂョ"
+        elif added_string == "dya":
+            added_string_latin = "dya"
+            added_string_hiragana = "ぢゃ"
+            added_string_katakana = "ヂァ"
+        elif added_string == "dyi":
+            added_string_latin = "dyi"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヂィ"
+        elif added_string == "dyu":
+            added_string_latin = "dyu"
+            added_string_hiragana = "ぢゅ"
+            added_string_katakana = "ヂュ"
+        elif added_string == "dye":
+            added_string_latin = "dye"
+            added_string_hiragana = "＊"
+            added_string_katakana = "ヂェ"
+        elif added_string == "dyo":
+            added_string_latin = "dyo"
+            added_string_hiragana = "ぢょ"
+            added_string_katakana = "ヂォ"
         elif added_string == "dza":
             added_string_latin = "dza"
             added_string_hiragana = "＊"

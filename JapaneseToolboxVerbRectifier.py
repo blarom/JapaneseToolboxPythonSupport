@@ -48,6 +48,7 @@ while not wsLocalTypes.cell(row=typesSheetIndex, column=4).value == "" and wsLoc
     meaningIndexStrings = meanings.split(";")
 
     for index in range(len(meaningIndexStrings)):
+
         meaningIndexValue = int(meaningIndexStrings[index])
         currentMeaning = str(wsLocalMeanings.cell(row=meaningIndexValue, column=2).value)
 

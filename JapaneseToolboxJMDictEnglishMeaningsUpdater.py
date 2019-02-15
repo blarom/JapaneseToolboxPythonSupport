@@ -181,7 +181,7 @@ LEGEND_DICT = {
     'joc': 'ZH',
     'anat': 'ZAn'
 }
-MAX_NUM_SURU_VERBS_TO_ADD = 100
+MAX_NUM_SURU_VERBS_TO_ADD = 300
 UNIQUE_DELIMITER = "---"
 
 # region Preparations
