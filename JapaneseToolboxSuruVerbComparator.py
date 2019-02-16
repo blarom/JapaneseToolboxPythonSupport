@@ -41,79 +41,96 @@ while True:
 verbRowIndex = 1
 while verbRowIndex < lastLocalVerbsIndex:
 
-    if wsLocalVerbs.cell(row=verbRowIndex, column=1).value == 'suru verb'\
-            and (wsLocalVerbs.cell(row=verbRowIndex, column=15).value is None
-                     or wsLocalVerbs.cell(row=verbRowIndex, column=15).value == ''):
+    if wsLocalVerbs.cell(row=verbRowIndex, column=1).value == 'suru verb':
 
         kanjiRoot = wsLocalVerbs.cell(row=verbRowIndex, column=8).value
         romajiRoot = wsLocalVerbs.cell(row=verbRowIndex, column=9).value
         meaningIndexesAsString = wsLocalVerbs.cell(row=verbRowIndex, column=12).value
-        try:
-            meaningIndexes = [int(meaningIndexAsString.strip()) for meaningIndexAsString in
-                              str(meaningIndexesAsString).split(";")]
-        except:
-            verbRowIndex += 1
-            continue
 
-        # Updating the english column with the local meanings
-        meanings = []
-        types = []
-        for meaningIndex in meaningIndexes:
-            meanings.append(wsLocalMeanings.cell(row=int(meaningIndex), column=2).value)
-            types.append(wsLocalMeanings.cell(row=meaningIndex, column=3).value)
-
-        wsLocalVerbs.cell(row=verbRowIndex, column=9).value = ', '.join(meanings)
-        wsLocalVerbs.cell(row=verbRowIndex, column=15).value = ', '.join(types)
-
-        # Updating the verbs sheet with the values extracted from wiktionary
         if kanjiRoot is None:
             verbRowIndex += 1
             continue
 
-        url = "https://en.wiktionary.org/wiki/" + kanjiRoot
-        url = urllib.parse.urlsplit(url)
-        url = list(url)
-        url[2] = urllib.parse.quote(url[2])
-        url = urllib.parse.urlunsplit(url)
+        if (wsLocalVerbs.cell(row=verbRowIndex, column=15).value is None
+                or wsLocalVerbs.cell(row=verbRowIndex, column=15).value == ''):
 
-        try:
-            # content = urlopen(url, timeout=10).read().decode('utf-8')
-            content = urlopen(url).read().decode('utf-8')
+            try:
+                meaningIndexes = [int(meaningIndexAsString.strip()) for meaningIndexAsString in
+                                  str(meaningIndexesAsString).split(";")]
+            except:
+                verbRowIndex += 1
+                continue
 
-            hasJapaneseVerb = re.search(r"Conjugation of \"<span class=\"Jpan\" lang=\"ja\">", content)
-            if hasJapaneseVerb:
-                match = re.search(r"title=\"する\"(.+?)id=\"(Conjugation|Usage)", content, re.M | re.S)
-                extendedMeaningsContainerCenter = match.group(0)
+            # Updating the english column with the local meanings
+            meanings = []
+            types = []
+            for meaningIndex in meaningIndexes:
+                meanings.append(wsLocalMeanings.cell(row=int(meaningIndex), column=2).value)
+                types.append(wsLocalMeanings.cell(row=meaningIndex, column=3).value)
 
-                if '>transitive<' in extendedMeaningsContainerCenter and '>intransitive<' in extendedMeaningsContainerCenter:
-                    wsLocalVerbs.cell(row=verbRowIndex, column=16).value = 'TI'
-                elif '>transitive<' in extendedMeaningsContainerCenter:
-                    wsLocalVerbs.cell(row=verbRowIndex, column=16).value = 'T'
-                elif '>intransitive<' in extendedMeaningsContainerCenter:
-                    wsLocalVerbs.cell(row=verbRowIndex, column=16).value = 'I'
-                else:
-                    wsLocalVerbs.cell(row=verbRowIndex, column=16).value = 'N/A'
+            wsLocalVerbs.cell(row=verbRowIndex, column=9).value = ', '.join(meanings)
+            wsLocalVerbs.cell(row=verbRowIndex, column=15).value = ', '.join(types)
 
-                match = re.search(r"title=\"suru\"(.+?)id=\"(Conjugation|Usage)", content, re.M | re.S)
-                meaningsContainerCenter = match.group(0)
-                meanings = re.findall(r">(.*?)<", meaningsContainerCenter)
+            # Updating the verbs sheet with the values extracted from wiktionary
+            url = "https://en.wiktionary.org/wiki/" + kanjiRoot
+            url = urllib.parse.urlsplit(url)
+            url = list(url)
+            url[2] = urllib.parse.quote(url[2])
+            url = urllib.parse.urlunsplit(url)
 
-                meanings = [meaning for meaning in meanings if (meaning != ''
-                                                                and meaning != '\n'
-                                                                and meaning != 'historical hiragana'
-                                                                and meaning != 'suru'
-                                                                and meaning != 'する')]
+            try:
+                # content = urlopen(url, timeout=10).read().decode('utf-8')
+                content = urlopen(url).read().decode('utf-8')
 
-                wsLocalVerbs.cell(row=verbRowIndex, column=17).value = ', '.join(meanings)
-        except URLError as error:
-            print("Request for " + kanjiRoot + " timed out.")
-            pass
-        except:
-            print("Request for " + kanjiRoot + " failed.")
-            pass
+                hasJapaneseVerb = re.search(r"Conjugation of \"<span class=\"Jpan\" lang=\"ja\">", content)
+                if hasJapaneseVerb:
+                    match = re.search(r"title=\"する\"(.+?)id=\"(Conjugation|Usage)", content, re.M | re.S)
+                    extendedMeaningsContainerCenter = match.group(0)
 
-        print("\rCompleted request No. " + str(verbRowIndex) + ": " + kanjiRoot)
-        if verbRowIndex % 25 == 0:
+                    if '>transitive<' in extendedMeaningsContainerCenter and '>intransitive<' in extendedMeaningsContainerCenter:
+                        wsLocalVerbs.cell(row=verbRowIndex, column=16).value = 'TI'
+                    elif '>transitive<' in extendedMeaningsContainerCenter:
+                        wsLocalVerbs.cell(row=verbRowIndex, column=16).value = 'T'
+                    elif '>intransitive<' in extendedMeaningsContainerCenter:
+                        wsLocalVerbs.cell(row=verbRowIndex, column=16).value = 'I'
+                    else:
+                        wsLocalVerbs.cell(row=verbRowIndex, column=16).value = 'N/A'
+
+                    match = re.search(r"title=\"suru\"(.+?)id=\"(Conjugation|Usage)", content, re.M | re.S)
+                    meaningsContainerCenter = match.group(0)
+                    meanings = re.findall(r">(.*?)<", meaningsContainerCenter)
+
+                    meanings = [meaning for meaning in meanings if (meaning != ''
+                                                                    and meaning != '\n'
+                                                                    and meaning != 'historical hiragana'
+                                                                    and meaning != 'suru'
+                                                                    and meaning != 'する')]
+
+                    wsLocalVerbs.cell(row=verbRowIndex, column=17).value = ', '.join(meanings)
+            except URLError as error:
+                print("Request for " + kanjiRoot + " timed out.")
+                pass
+            except:
+                print("Request for " + kanjiRoot + " failed.")
+                pass
+
+            print("\rCompleted request No. " + str(verbRowIndex) + ": " + kanjiRoot)
+
+        elif (wsLocalVerbs.cell(row=verbRowIndex, column=15).value == "VsuruT" and wsLocalVerbs.cell(row=verbRowIndex, column=16).value == 'T') or (wsLocalVerbs.cell(row=verbRowIndex, column=15).value == "VsuruI"
+                and wsLocalVerbs.cell(row=verbRowIndex, column=16).value == 'I'):
+            wsLocalVerbs.cell(row=verbRowIndex, column=15).value = 'MATCHES'
+            wsLocalVerbs.cell(row=verbRowIndex, column=16).value = ''
+            wsLocalVerbs.cell(row=verbRowIndex, column=17).value = ''
+            print("Request No. " + str(verbRowIndex) + " for " + kanjiRoot + " already matches.")
+
+        elif wsLocalVerbs.cell(row=verbRowIndex, column=15).value == "MATCHES":
+            print("Request No. " + str(verbRowIndex) + " for " + kanjiRoot + " already matches.")
+
+        else:
+            print("Request No. " + str(verbRowIndex) + " for " + kanjiRoot + " mismatches and ignored.")
+
+
+        if verbRowIndex % 100 == 0:
             localVerbsWorkbook.save(
                 filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - updated with suru verbs data.xlsx')
 
