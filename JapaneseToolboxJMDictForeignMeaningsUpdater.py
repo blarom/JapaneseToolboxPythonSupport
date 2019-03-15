@@ -2,6 +2,8 @@
 
 import re
 import openpyxl
+
+import Constants
 from JapaneseToolboxConverter import Converter
 
 current_entry = ''
@@ -9,10 +11,14 @@ current_entry = ''
 # region Preparations
 localWordsWorkbook = openpyxl.load_workbook(
     filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
+localVerbsWorkbook = openpyxl.load_workbook(
+    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
 wsLocalMeanings = localWordsWorkbook["Meanings"]
 wsLocalMeaningsFR = localWordsWorkbook["MeaningsFR"]
 wsLocalMeaningsES = localWordsWorkbook["MeaningsES"]
 wsLocalTypes = localWordsWorkbook["Types"]
+wsLocalGrammar = localWordsWorkbook["Grammar"]
+wsLocalVerbsForGrammar = localVerbsWorkbook["VerbsForGrammar"]
 
 
 class Word:
@@ -76,7 +82,7 @@ with open("JMDict", encoding='utf-8') as infile:
 
 # endregion
 
-#region Updating the Types and Meaning sheets with the values
+# region Updating the Types and Meaning sheets with the values
 def binary_search(words_list, text, lo=0, hi=None):
     # https://stackoverflow.com/questions/4161629/search-a-list-of-objects-in-python
     if hi is None:
@@ -96,42 +102,75 @@ def binary_search(words_list, text, lo=0, hi=None):
     return -1
 
 
-typesIndex = 1
-workingWordsList = list(words)
-workingWordsList.sort(key=lambda x: x.uniqueID)
-meaningFRindex = 2
-meaningESindex = 2
-while True:
-    romaji = wsLocalTypes.cell(row=typesIndex, column=3).value
-    kanji = wsLocalTypes.cell(row=typesIndex, column=4).value
-    meaningIndexes = wsLocalTypes.cell(row=typesIndex, column=5).value
+localWordsList = []
+jmDictWordsList = list(words)
+jmDictWordsList.sort(key=lambda x: x.uniqueID)
+for i in range(0, 3):
 
-    if romaji == "" or not romaji:
-        break
+    typesIndex = 1
+    meaningFRindex = 2
+    meaningESindex = 2
+    if i == 0:
+        workingWorksheet = wsLocalTypes
+    elif i == 1:
+        workingWorksheet = wsLocalGrammar
+    else:
+        workingWorksheet = wsLocalVerbsForGrammar
 
-    uniqueID = romaji + "zzz" + kanji
-    print(uniqueID + "\n")
+    while True:
+        romaji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_ROMAJI).value
+        kanji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_KANJI).value
+        meaningIndexes = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_MEANINGS_EN).value
 
-    index_of_first_hit = binary_search(workingWordsList, uniqueID)
-    if index_of_first_hit != -1:
+        if romaji == "" or not romaji:
+            break
 
-        word = workingWordsList[index_of_first_hit]
+        localWordsList.append(Word(kanji, "", romaji, "", ""))
 
-        #print(word.romaji + "-" + word.kanji + "\n")
-        meaningIndex = int(meaningIndexes.split(";")[0])
-        firstENmeaning = str(wsLocalMeanings.cell(row=meaningIndex, column=2).value)
-        firstENtype = str(wsLocalMeanings.cell(row=meaningIndex, column=3).value)
+        uniqueID = romaji + "zzz" + kanji
+        print(uniqueID + "\n")
 
-        for i in range(len(word.french_meanings)):
-            wsLocalMeaningsFR.cell(row=meaningFRindex, column=2).value = word.french_meanings[i]
-            meaningFRindex += 1
+        index_of_first_hit = binary_search(jmDictWordsList, uniqueID)
+        if index_of_first_hit != -1:
 
-        for i in range(len(word.spanish_meanings)):
-            wsLocalMeanings.cell(row=meaningESindex, column=13).value = word.spanish_meanings[i]
-            meaningESindex += 1
+            word = jmDictWordsList[index_of_first_hit]
 
-    typesIndex += 1
-#endregion
+            # print(word.romaji + "-" + word.kanji + "\n")
+
+            meaningIndexesFR = []
+            for j in range(len(word.french_meanings)):
+                wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_INDEX).value = meaningFRindex
+                wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_MEANING).value = word.french_meanings[j]
+                wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_TYPE).value = ""
+                meaningIndexesFR.append(meaningFRindex)
+                meaningFRindex += 1
+            workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_MEANINGS_FR).value = ";".join(meaningIndexesFR)
+
+            meaningIndexesES = []
+            for j in range(len(word.spanish_meanings)):
+                wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_INDEX).value = meaningFRindex
+                wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_MEANING).value = word.spanish_meanings[j]
+                wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_TYPE).value = ""
+                meaningIndexesES.append(meaningESindex)
+                meaningESindex += 1
+            workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_MEANINGS_ES).value = ";".join(meaningIndexesES)
+
+        typesIndex += 1
+# endregion
+
+# region Creating a list of words that are not in the local database
+newWords = []
+for word in jmDictWordsList:
+    index_of_first_hit = binary_search(localWordsList, word.uniqueID)
+    if index_of_first_hit == -1:
+        newWords.append(word)
+
+print("Number of new words: " + str(len(newWords)))
+
+# endregion
 
 # Saving the results
-localWordsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - updated with JMDict_foreign.xlsx')
+localWordsWorkbook.save(
+    filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - updated with JMDict_foreign.xlsx')
+localWordsWorkbook.save(
+    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - updated with JMDict_foreign.xlsx')
