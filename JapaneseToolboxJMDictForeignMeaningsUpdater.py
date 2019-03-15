@@ -10,6 +10,8 @@ current_entry = ''
 localWordsWorkbook = openpyxl.load_workbook(
     filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
 wsLocalMeanings = localWordsWorkbook["Meanings"]
+wsLocalMeaningsFR = localWordsWorkbook["MeaningsFR"]
+wsLocalMeaningsES = localWordsWorkbook["MeaningsES"]
 wsLocalTypes = localWordsWorkbook["Types"]
 
 
@@ -97,6 +99,8 @@ def binary_search(words_list, text, lo=0, hi=None):
 typesIndex = 1
 workingWordsList = list(words)
 workingWordsList.sort(key=lambda x: x.uniqueID)
+meaningFRindex = 2
+meaningESindex = 2
 while True:
     romaji = wsLocalTypes.cell(row=typesIndex, column=3).value
     kanji = wsLocalTypes.cell(row=typesIndex, column=4).value
@@ -113,12 +117,18 @@ while True:
 
         word = workingWordsList[index_of_first_hit]
 
-        print(word.romaji + "-" + word.kanji + "\n")
+        #print(word.romaji + "-" + word.kanji + "\n")
         meaningIndex = int(meaningIndexes.split(";")[0])
-        currentMeaning = str(wsLocalMeanings.cell(row=meaningIndex, column=2).value)
+        firstENmeaning = str(wsLocalMeanings.cell(row=meaningIndex, column=2).value)
+        firstENtype = str(wsLocalMeanings.cell(row=meaningIndex, column=3).value)
 
-        wsLocalMeanings.cell(row=meaningIndex, column=12).value = ', '.join(word.french_meanings)
-        wsLocalMeanings.cell(row=meaningIndex, column=13).value = ', '.join(word.spanish_meanings)
+        for i in range(len(word.french_meanings)):
+            wsLocalMeaningsFR.cell(row=meaningFRindex, column=2).value = word.french_meanings[i]
+            meaningFRindex += 1
+
+        for i in range(len(word.spanish_meanings)):
+            wsLocalMeanings.cell(row=meaningESindex, column=13).value = word.spanish_meanings[i]
+            meaningESindex += 1
 
     typesIndex += 1
 #endregion

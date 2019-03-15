@@ -1,4 +1,5 @@
 # Japanese Toolbox database creator
+import Constants
 import pyrebase
 import json
 import openpyxl
@@ -56,7 +57,7 @@ localVerbsWorkbook = openpyxl.load_workbook(
     filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
 
 # assign_sheet=wb.active
-wsLocalMeanings = localWordsWorkbook["Meanings"]
+wsLocalMeaningsEN = localWordsWorkbook["Meanings"]
 wsLocalTypes = localWordsWorkbook["Types"]
 wsLocalGrammar = localWordsWorkbook["Grammar"]
 wsLocalVerbsForGrammar = localVerbsWorkbook["VerbsForGrammar"]
@@ -65,7 +66,7 @@ wsLocalVerbs = localVerbsWorkbook["Verbs"]
 # Getting the size of the Local Types list
 lastLocalTypesIndex = 1
 while True:
-    value = wsLocalTypes.cell(row=lastLocalTypesIndex, column=3).value
+    value = wsLocalTypes.cell(row=lastLocalTypesIndex, column=Constants.TYPES_COL_ROMAJI).value
     if not value:
         lastLocalTypesIndex -= 1
         break
@@ -74,7 +75,7 @@ while True:
 # Getting the size of the Local Grammar list
 lastLocalGrammarIndex = 1
 while True:
-    value = wsLocalGrammar.cell(row=lastLocalGrammarIndex, column=3).value
+    value = wsLocalGrammar.cell(row=lastLocalGrammarIndex, column=Constants.TYPES_COL_ROMAJI).value
     if not value:
         lastLocalGrammarIndex -= 1
         break
@@ -83,7 +84,7 @@ while True:
 # Getting the size of the Local Meanings list
 lastLocalMeaningsIndex = 1
 while True:
-    value = wsLocalMeanings.cell(row=lastLocalMeaningsIndex, column=3).value
+    value = wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex, column=Constants.MEANINGS_COL_INDEX).value
     if not value:
         lastLocalMeaningsIndex -= 1
         break
@@ -92,9 +93,9 @@ while True:
 # Getting the size of the Local Verbs list
 lastLocalVerbsIndex = 1
 while True:
-    value = wsLocalVerbs.cell(row=lastLocalVerbsIndex, column=3).value
-    value2 = wsLocalVerbs.cell(row=lastLocalVerbsIndex + 1, column=3).value
-    value3 = wsLocalVerbs.cell(row=lastLocalVerbsIndex + 2, column=3).value
+    value = wsLocalVerbs.cell(row=lastLocalVerbsIndex, column=Constants.VERBS_COL_KANJI).value
+    value2 = wsLocalVerbs.cell(row=lastLocalVerbsIndex + 1, column=Constants.VERBS_COL_KANJI).value
+    value3 = wsLocalVerbs.cell(row=lastLocalVerbsIndex + 2, column=Constants.VERBS_COL_KANJI).value
     if (not value) & (not value2) & (not value3):
         lastLocalVerbsIndex -= 1
         break
@@ -404,12 +405,14 @@ class JishoWord(object):
     kanji = ""
     fixedJishoWordAltSpellings = ""
     meanings = []
+    common = 0
 
-    def __init__(self, romaji, kanji, altSpellings, meanings):
+    def __init__(self, romaji, kanji, altSpellings, meanings, common):
         self.romaji = romaji
         self.kanji = kanji
         self.altSpellings = altSpellings
         self.meanings = meanings
+        self.common = 1 if common else 0
 
     class Meaning(object):
         meaning = ""
@@ -462,7 +465,7 @@ for wordKey in jishoWordsListFromFirebase.val():
         and (not (wordObject.romaji == "ga" and wordObject.kanji == "が"))\
         and (not (wordObject.romaji == "ni" and wordObject.kanji == "に"))\
         and (not (wordObject.kanji == "ケ" and wordObject.kanji == "ヶ")):
-        jishoWord = JishoWord(wordObject.romaji, wordObject.kanji, wordObject.altSpellings, meanings)
+        jishoWord = JishoWord(wordObject.romaji, wordObject.kanji, wordObject.altSpellings, meanings, wordObject.isCommon)
         jishoWords.append(jishoWord)
 # endregion
 
@@ -476,6 +479,7 @@ while jishoWordIndex < len(jishoWords):
     jishoWordRomaji = jishoWord.romaji
     jishoWordKanji = jishoWord.kanji
     jishoWordAltSpellings = str(jishoWord.altSpellings)
+    jishoWordCommon = jishoWord.common
     if jishoWordAltSpellings.strip() != '':
         jishoWordAltSpellings = ", ".join(set([element.strip() for element in jishoWordAltSpellings.split(",")]))
         suruJishoWordAltSpellings = ", ".join([element.strip() + "する" if not re.match("^[a-zA-Z]+$", element.strip()) else element.strip() + "suru" for element in jishoWordAltSpellings.split(",")])
@@ -573,10 +577,10 @@ while jishoWordIndex < len(jishoWords):
                     tempVerbSheetIndex = lastLocalVerbsIndex-1
                     isInSuruList = False
 
-                    while "suru" in str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=7).value):
-                        currentLocalRomaji = str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=7).value)
-                        currentLocalKanji = str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=6).value)
-                        currentLocalAltSpellings = str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=11).value)
+                    while "suru" in str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=Constants.VERBS_COL_ROMAJI).value):
+                        currentLocalRomaji = str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=Constants.VERBS_COL_ROMAJI).value)
+                        currentLocalKanji = str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=Constants.VERBS_COL_KANJI).value)
+                        currentLocalAltSpellings = str(wsLocalVerbs.cell(row=tempVerbSheetIndex, column=Constants.VERBS_COL_ALTS).value)
 
                         if jishoWordKanji in currentLocalKanji and jishoWordRomaji in currentLocalRomaji:
                             isInSuruList = True
@@ -588,7 +592,7 @@ while jishoWordIndex < len(jishoWords):
                         tempVerbSheetIndex -= 1
 
                     if not isInSuruList:
-                        newJishoWord = JishoWord(jishoWordRomaji + " suru", jishoWordKanji + "する", suruJishoWordAltSpellings, newMeanings)
+                        newJishoWord = JishoWord(jishoWordRomaji + " suru", jishoWordKanji + "する", suruJishoWordAltSpellings, newMeanings, jishoWordCommon)
                         jishoWords.append(newJishoWord)
 
                 elif ((jTType == "VsuruT") | (jTType == "VsuruI")) & ("ssuru" not in jishoWordRomaji):
@@ -624,14 +628,15 @@ while jishoWordIndex < len(jishoWords):
     # Finding the identical local entry in the Grammar sheet
     rowIndexInLocalWordSheet = 2
     while True:
-        value = wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=3).value
+        value = wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ROMAJI).value
         if not value:
             break
 
-        currentLocalRomaji = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=3).value)
-        currentLocalKanji = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=4).value)
-        currentLocalMeaningIndexes = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=5).value)
-        currentLocalAltSpellings = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=6).value)
+        currentLocalRomaji = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ROMAJI).value)
+        currentLocalKanji = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_KANJI).value)
+        currentLocalAltSpellings = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ALTS).value)
+        currentLocalCommon = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_COMMON).value)
+        currentLocalMeaningsIndexesEN = str(wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_MEANINGS_EN).value)
 
         # Once the identical local entry is found, find the meanings that are unique to the Jisho word, and add them to the database
         if (currentLocalRomaji == jishoWordRomaji) and (currentLocalKanji == jishoWordKanji):
@@ -640,16 +645,20 @@ while jishoWordIndex < len(jishoWords):
 
             # Updating the altSpellings
             if currentLocalAltSpellings == "" or currentLocalAltSpellings == "None":
-                wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=6).value = jishoWordAltSpellings
+                wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ALTS).value = jishoWordAltSpellings
             else:
                 currentLocalAltSpellingsList = [element.strip() for element in currentLocalAltSpellings.split(",")]
                 for jishoWordAltSpelling in jishoWordAltSpellings.split(","):
                     if jishoWordAltSpelling not in currentLocalAltSpellings:
                         currentLocalAltSpellingsList.append(jishoWordAltSpelling)
-                wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=6).value = ', '.join(currentLocalAltSpellingsList)
+                wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ALTS).value = ', '.join(currentLocalAltSpellingsList)
+
+            # Updating the common status
+            if currentLocalCommon == 0 or currentLocalCommon is None or currentLocalCommon == "":
+                wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_COMMON).value = jishoWordCommon
 
             # Updating the meanings
-            localMeaningIndexes = currentLocalMeaningIndexes.split(";")
+            localMeaningIndexes = currentLocalMeaningsIndexesEN.split(";")
             localMeaningLoopIndex = 0
             while localMeaningLoopIndex < len(localMeaningIndexes):
 
@@ -657,7 +666,7 @@ while jishoWordIndex < len(jishoWords):
 
                 # Getting the current local meaning
                 rowIndexInLocalMeanings = int(localMeaningIndex)
-                currentMeaning = str(wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=2).value).strip().replace(
+                currentMeaning = str(wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_MEANING).value).strip().replace(
                     "\u200b", "")  # Fixes Zero Width Space bug
 
                 # Checking if the Jisho meaning is already equal to one of the Local word's meanings
@@ -668,16 +677,16 @@ while jishoWordIndex < len(jishoWords):
                     if jishoWordTypesForSheets[jishoMeaningLoopIndex] == "G":
                         if jishoWordMeaningString == currentMeaning:
                             foundMeaning = True
-                            wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=9).value = "J"
+                            wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_SOURCE).value = "J"
                             break
                         elif jishoWordMeaningString in currentMeaning:
                             foundMeaning = True
-                            wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=9).value = "LOC"
+                            wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_SOURCE).value = "LOC"
                             break
                         elif currentMeaning in jishoWordMeaningString:
                             foundMeaning = True
-                            wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=2).value = jishoWordMeaningString
-                            wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=9).value = "J"
+                            wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_MEANING).value = jishoWordMeaningString
+                            wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_SOURCE).value = "J"
                             break
                     jishoMeaningLoopIndex += 1
 
@@ -696,14 +705,15 @@ while jishoWordIndex < len(jishoWords):
                     jishoWordMeaningType = jishoWordMeaningTypes[i]
 
                     # Adding the results to the meanings excel sheet
-                    wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=1).value = lastLocalMeaningsIndex + 1
-                    wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=2).value = jishoWordMeaningString
-                    wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=3).value = jishoWordMeaningType
-                    wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=9).value = "J"
+                    wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_INDEX).value = lastLocalMeaningsIndex + 1
+                    wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_MEANING).value = jishoWordMeaningString
+                    wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_TYPE).value = jishoWordMeaningType
+                    wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_SOURCE).value = "J"
 
                     # Updating the meaning indexes in the Local Grammar
-                    wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=5).value = str(wsLocalGrammar.cell(
-                        row=rowIndexInLocalWordSheet, column=5).value) + ";" + str(lastLocalMeaningsIndex + 1)
+                    wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_MEANINGS_EN).value\
+                        = str(wsLocalGrammar.cell(
+                            row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_MEANINGS_EN).value) + ";" + str(lastLocalMeaningsIndex + 1)
 
                     # Incrementing the meaning index for the next iteration
                     lastLocalMeaningsIndex += 1
@@ -716,16 +726,17 @@ while jishoWordIndex < len(jishoWords):
     # Finding the identical local entry in the Verbs sheet
     rowIndexInLocalWordSheet = 4
     while True:
-        value = wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=7).value
-        value2 = wsLocalVerbs.cell(row=rowIndexInLocalWordSheet + 1, column=7).value
-        value3 = wsLocalVerbs.cell(row=rowIndexInLocalWordSheet + 2, column=7).value
+        value = wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_ROMAJI).value
+        value2 = wsLocalVerbs.cell(row=rowIndexInLocalWordSheet + 1, column=Constants.VERBS_COL_ROMAJI).value
+        value3 = wsLocalVerbs.cell(row=rowIndexInLocalWordSheet + 2, column=Constants.VERBS_COL_ROMAJI).value
         if (not value) and (not value2) and (not value3):
             break
 
-        currentLocalRomaji = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=7).value)
-        currentLocalKanji = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=6).value)
-        currentLocalMeaningIndexes = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=12).value)
-        currentLocalAltSpellings = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=11).value)
+        currentLocalRomaji = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_ROMAJI).value)
+        currentLocalKanji = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_KANJI).value)
+        currentLocalMeaningsIndexesEN = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_MEANINGS_EN).value)
+        currentLocalAltSpellings = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_ALTS).value)
+        currentLocalCommon = str(wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_COMMON).value)
 
 
         # Once the identical local entry is found, find the meanings/altSpellings that are unique to the Jisho word, and add them to the database
@@ -748,23 +759,27 @@ while jishoWordIndex < len(jishoWords):
             currentLocalAltSpellingsList = [element.strip() for element in currentLocalAltSpellings.split(",")]
             if currentLocalRomaji == (jishoWordRomaji + " suru") or currentLocalKanji == (jishoWordKanji + "する"):
                 if currentLocalAltSpellings == "" or currentLocalAltSpellings == "None":
-                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=11).value = suruJishoWordAltSpellings
+                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_ALTS).value = suruJishoWordAltSpellings
                 else:
                     for jishoWordAltSpelling in suruJishoWordAltSpellings.split(","):
                         if jishoWordAltSpelling not in currentLocalAltSpellings:
                             currentLocalAltSpellingsList.append(jishoWordAltSpelling)
-                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=11).value = ', '.join(currentLocalAltSpellingsList)
+                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_ALTS).value = ', '.join(currentLocalAltSpellingsList)
             else:
                 if currentLocalAltSpellings == "" or currentLocalAltSpellings == "None":
-                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=11).value = jishoWordAltSpellings
+                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_ALTS).value = jishoWordAltSpellings
                 else:
                     for jishoWordAltSpelling in jishoWordAltSpellings.split(","):
                         if jishoWordAltSpelling not in currentLocalAltSpellings:
                             currentLocalAltSpellingsList.append(jishoWordAltSpelling)
-                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=11).value = ', '.join(currentLocalAltSpellingsList)
+                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_ALTS).value = ', '.join(currentLocalAltSpellingsList)
+
+            # Updating the common status
+            if currentLocalCommon == 0 or currentLocalCommon is None or currentLocalCommon == "":
+                wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_COMMON).value = jishoWordCommon
 
             # Updating the meanings
-            localMeaningIndexes = currentLocalMeaningIndexes.split(";")
+            localMeaningIndexes = currentLocalMeaningsIndexesEN.split(";")
             localMeaningLoopIndex = 0
             while localMeaningLoopIndex < len(localMeaningIndexes):
 
@@ -772,7 +787,7 @@ while jishoWordIndex < len(jishoWords):
 
                 # Getting the current local meaning
                 rowIndexInLocalMeanings = int(localMeaningIndex)
-                currentMeaning = str(wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=2).value).strip().replace(
+                currentMeaning = str(wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_MEANING).value).strip().replace(
                     "\u200b", "")  # Fixes Zero Width Space bug
 
                 # Checking is the Local meaning is already equal to one of the Jisho word's meanings
@@ -783,16 +798,16 @@ while jishoWordIndex < len(jishoWords):
                     if jishoWordTypesForSheets[jishoMeaningLoopIndex] == "V":
                         if jishoWordMeaningString == currentMeaning:
                             foundMeaning = True
-                            wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=9).value = "J"
+                            wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_SOURCE).value = "J"
                             break
                         elif jishoWordMeaningString in currentMeaning:
                             foundMeaning = True
-                            wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=9).value = "LOC"
+                            wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_SOURCE).value = "LOC"
                             break
                         elif currentMeaning in jishoWordMeaningString:
                             foundMeaning = True
-                            wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=2).value = jishoWordMeaningString
-                            wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=9).value = "J"
+                            wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_MEANING).value = jishoWordMeaningString
+                            wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_SOURCE).value = "J"
                             break
                     jishoMeaningLoopIndex += 1
 
@@ -814,14 +829,14 @@ while jishoWordIndex < len(jishoWords):
                     jishoWordMeaningType = jishoWordMeaningTypes[i]
 
                     # Adding the results to the meanings excel sheet
-                    wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=1).value = lastLocalMeaningsIndex + 1
-                    wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=2).value = jishoWordMeaningString
-                    wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=3).value = jishoWordMeaningType
-                    wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=9).value = "J"
+                    wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_INDEX).value = lastLocalMeaningsIndex + 1
+                    wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_MEANING).value = jishoWordMeaningString
+                    wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_TYPE).value = jishoWordMeaningType
+                    wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_SOURCE).value = "J"
 
                     # Updating the meaning indexes in the Local Types
-                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=12).value = str(wsLocalVerbs.cell(
-                        row=rowIndexInLocalWordSheet, column=12).value) + ";" + str(lastLocalMeaningsIndex + 1)
+                    wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_MEANINGS_EN).value = str(wsLocalVerbs.cell(
+                        row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_MEANINGS_EN).value) + ";" + str(lastLocalMeaningsIndex + 1)
 
                     # Incrementing the meaning index for the next iteration
                     lastLocalMeaningsIndex += 1
@@ -834,14 +849,15 @@ while jishoWordIndex < len(jishoWords):
     # Finding the identical local entry in the Types sheet
     rowIndexInLocalWordSheet = 2
     while True:
-        value = wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=3).value
+        value = wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_KANJI).value
         if not value:
             break
 
-        currentLocalRomaji = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=3).value)
-        currentLocalKanji = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=4).value)
-        currentLocalMeaningIndexes = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=5).value)
-        currentLocalAltSpellings = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=6).value)
+        currentLocalRomaji = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ROMAJI).value)
+        currentLocalKanji = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_KANJI).value)
+        currentLocalMeaningsIndexesEN = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_MEANINGS_EN).value)
+        currentLocalAltSpellings = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ALTS).value)
+        currentLocalCommon = str(wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_COMMON).value)
 
         # Once the identical local entry is found, find the meanings that are unique to the Jisho word, and add them to the database
         if (currentLocalRomaji == jishoWordRomaji) and (currentLocalKanji == jishoWordKanji):
@@ -850,13 +866,17 @@ while jishoWordIndex < len(jishoWords):
 
             # Updating the altSpellings
             if currentLocalAltSpellings == "" or currentLocalAltSpellings == "None":
-                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=6).value = jishoWordAltSpellings
+                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ALTS).value = jishoWordAltSpellings
             else:
                 currentLocalAltSpellingsList = [element.strip() for element in currentLocalAltSpellings.split(",")]
                 for jishoWordAltSpelling in jishoWordAltSpellings.split(","):
                     if jishoWordAltSpelling not in currentLocalAltSpellings:
                         currentLocalAltSpellingsList.append(jishoWordAltSpelling)
-                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=6).value = ', '.join(currentLocalAltSpellingsList)
+                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ALTS).value = ', '.join(currentLocalAltSpellingsList)
+
+            # Updating the common status
+            if currentLocalCommon == 0 or currentLocalCommon is None or currentLocalCommon == "":
+                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_COMMON).value = jishoWordCommon
 
             # Updating the meanings
             # Removing identical meaning entries from the jisho meanings list: they correspond to different types (e.g. Noun and Ana)
@@ -875,7 +895,7 @@ while jishoWordIndex < len(jishoWords):
                         duplicateIndex += 1
                 jishoWordMeaningStringIndex += 1
 
-            localMeaningIndexes = currentLocalMeaningIndexes.split(";")
+            localMeaningIndexes = currentLocalMeaningsIndexesEN.split(";")
             localMeaningLoopIndex = 0
             while localMeaningLoopIndex < len(localMeaningIndexes):
 
@@ -883,7 +903,7 @@ while jishoWordIndex < len(jishoWords):
 
                 # Getting the current local meaning
                 rowIndexInLocalMeanings = int(localMeaningIndex)
-                currentMeaning = str(wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=2).value).strip().replace(
+                currentMeaning = str(wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_MEANING).value).strip().replace(
                     "\u200b", "")  # Fixes Zero Width Space bug
 
                 # Checking is the Local meaning is already equal to one of the Jisho word's meanings
@@ -893,16 +913,16 @@ while jishoWordIndex < len(jishoWords):
 
                     if jishoWordMeaningString == currentMeaning:
                         foundMeaning = True
-                        wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=9).value = "J"
+                        wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_SOURCE).value = "J"
                         break
                     elif jishoWordMeaningString in currentMeaning:
                         foundMeaning = True
-                        wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=9).value = "LOC"
+                        wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_SOURCE).value = "LOC"
                         break
                     elif currentMeaning in jishoWordMeaningString:
                         foundMeaning = True
-                        wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=2).value = jishoWordMeaningString
-                        wsLocalMeanings.cell(row=rowIndexInLocalMeanings, column=9).value = "J"
+                        wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_MEANING).value = jishoWordMeaningString
+                        wsLocalMeaningsEN.cell(row=rowIndexInLocalMeanings, column=Constants.MEANINGS_COL_SOURCE).value = "J"
                         break
                     jishoMeaningLoopIndex += 1
 
@@ -919,14 +939,14 @@ while jishoWordIndex < len(jishoWords):
                 jishoWordMeaningType = jishoWordMeaningTypes[i]
 
                 # Adding the results to the meanings excel sheet
-                wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=1).value = lastLocalMeaningsIndex + 1
-                wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=2).value = jishoWordMeaningString
-                wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=3).value = jishoWordMeaningType
-                wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=9).value = "J"
+                wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_INDEX).value = lastLocalMeaningsIndex + 1
+                wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_MEANING).value = jishoWordMeaningString
+                wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_TYPE).value = jishoWordMeaningType
+                wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_SOURCE).value = "J"
 
                 # Updating the meaning indexes in the Local Types
-                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=5).value = str(wsLocalTypes.cell(
-                    row=rowIndexInLocalWordSheet, column=5).value) + ";" + str(lastLocalMeaningsIndex + 1)
+                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_MEANINGS_EN).value = str(wsLocalTypes.cell(
+                    row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_MEANINGS_EN).value) + ";" + str(lastLocalMeaningsIndex + 1)
 
                 # Incrementing the meaning index for the next iteration
                 lastLocalMeaningsIndex += 1
@@ -940,9 +960,10 @@ while jishoWordIndex < len(jishoWords):
     if not wordAlreadyExists:
 
         # Adding a new entry in the Local Types list
-        wsLocalTypes.cell(row=lastLocalTypesIndex + 1, column=3).value = jishoWordRomaji
-        wsLocalTypes.cell(row=lastLocalTypesIndex + 1, column=4).value = jishoWordKanji
-        wsLocalTypes.cell(row=lastLocalTypesIndex + 1, column=6).value = jishoWordAltSpellings
+        wsLocalTypes.cell(row=lastLocalTypesIndex + 1, column=Constants.TYPES_COL_ROMAJI).value = jishoWordRomaji
+        wsLocalTypes.cell(row=lastLocalTypesIndex + 1, column=Constants.TYPES_COL_KANJI).value = jishoWordKanji
+        wsLocalTypes.cell(row=lastLocalTypesIndex + 1, column=Constants.TYPES_COL_ALTS).value = jishoWordAltSpellings
+        wsLocalTypes.cell(row=lastLocalTypesIndex + 1, column=Constants.TYPES_COL_COMMON).value = jishoWordCommon
 
         # Adding the meanings to the Local Meanings list and updating the meanings indexes in the Types list
         for i in range(len(jishoWordMeanings)):
@@ -950,17 +971,17 @@ while jishoWordIndex < len(jishoWords):
             jishoWordMeaningType = jishoWordMeaningTypes[i]
 
             # Adding the results to the meanings excel sheet
-            wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=1).value = lastLocalMeaningsIndex + 1
-            wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=2).value = jishoWordMeaningString
-            wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=3).value = jishoWordMeaningType
-            wsLocalMeanings.cell(row=lastLocalMeaningsIndex + 1, column=9).value = "J"
+            wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_INDEX).value = lastLocalMeaningsIndex + 1
+            wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_MEANING).value = jishoWordMeaningString
+            wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_TYPE).value = jishoWordMeaningType
+            wsLocalMeaningsEN.cell(row=lastLocalMeaningsIndex + 1, column=Constants.MEANINGS_COL_SOURCE).value = "J"
 
             # Updating the meaning indexes in the Local Types
             if i == 0:
-                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=5).value = lastLocalMeaningsIndex + 1
+                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_MEANINGS_EN).value = lastLocalMeaningsIndex + 1
             else:
-                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=5).value = str(wsLocalTypes.cell(
-                    row=rowIndexInLocalWordSheet, column=5).value) + ";" + str(lastLocalMeaningsIndex + 1)
+                wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_MEANINGS_EN).value = str(wsLocalTypes.cell(
+                    row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_MEANINGS_EN).value) + ";" + str(lastLocalMeaningsIndex + 1)
 
             # Incrementing the Meaning index for the next iteration
             lastLocalMeaningsIndex += 1
