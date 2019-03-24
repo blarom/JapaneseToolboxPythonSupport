@@ -437,7 +437,16 @@ for wordKey in jishoWordsListFromFirebase.val():
     wordObject = Word(json.dumps(word))
 
     meanings = []
-    for jishoWordMeaningString in wordObject.meanings:
+    wordMeanings = []
+    try:
+        wordMeanings = wordObject.meaningsEN
+    except:
+        try:
+            wordMeanings = wordObject.meanings
+        except:
+            continue
+
+    for jishoWordMeaningString in wordMeanings:
         meaningObject = Word.Meaning(json.dumps(jishoWordMeaningString))
         grammarType = meaningObject.type
         meaning = meaningObject.meaning
