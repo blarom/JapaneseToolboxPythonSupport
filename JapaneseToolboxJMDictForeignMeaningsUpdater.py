@@ -10,9 +10,9 @@ current_entry = ''
 
 # region Preparations
 localWordsWorkbook = openpyxl.load_workbook(
-    filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
+    filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - before foreign.xlsx', data_only=True)
 localVerbsWorkbook = openpyxl.load_workbook(
-    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
+    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - before foreign.xlsx', data_only=True)
 wsLocalMeanings = localWordsWorkbook["Meanings"]
 wsLocalMeaningsFR = localWordsWorkbook["MeaningsFR"]
 wsLocalMeaningsES = localWordsWorkbook["MeaningsES"]
@@ -38,7 +38,7 @@ converter = Converter()
 # region Filling the foreign words list
 words = []
 reached_first_entry = False
-with open("JMDict", encoding='utf-8') as infile:
+with open("JMDict.xml", encoding='utf-8') as infile:
     for line in infile:
 
         if "<entry>" in line:
@@ -109,38 +109,60 @@ jmDictWordsList = list(words)
 jmDictWordsList.sort(key=lambda x: x.uniqueID)
 meaningFRindex = 2
 meaningESindex = 2
-for i in range(0, 3):
+sheetNum_types = 0
+sheetNum_grammar = 1
+sheetNum_verbs = 2
 
-    if i == 0:
+for sheetNum in range(0, 3):
+
+    if sheetNum == sheetNum_types:
         typesIndex = 2
         workingWorksheet = wsLocalTypes
-    elif i == 1:
+    elif sheetNum == sheetNum_grammar:
         typesIndex = 2
         workingWorksheet = wsLocalGrammar
-    else:
+    elif sheetNum == sheetNum_verbs:
         typesIndex = 4
         workingWorksheet = wsLocalVerbs
+    else:
+        typesIndex = 2
+        workingWorksheet = wsLocalTypes
 
+    # region Row skip conditions
     while True:
-        if i==0 or i==1:
+        if sheetNum == sheetNum_types or sheetNum == sheetNum_grammar:
             romaji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_ROMAJI).value
             kanji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_KANJI).value
 
             if (romaji == "" or not romaji or romaji is None) or (kanji == "" or not kanji or kanji is None):
                 break
-        else:
+        elif sheetNum == sheetNum_verbs:
             romaji = workingWorksheet.cell(row=typesIndex, column=Constants.VERBS_COL_ROMAJI).value
             kanji = workingWorksheet.cell(row=typesIndex, column=Constants.VERBS_COL_KANJI).value
 
-            if (workingWorksheet.cell(row=typesIndex, column=1).value == '-'\
-                    and workingWorksheet.cell(row=typesIndex, column=2).value == '-'\
+            if (workingWorksheet.cell(row=typesIndex, column=1).value == '-'
+                    and workingWorksheet.cell(row=typesIndex, column=2).value == '-'
                     and workingWorksheet.cell(row=typesIndex, column=3).value == '-'):
                 break
 
             if (romaji == "" or not romaji or romaji is None) or (kanji == "" or not kanji or kanji is None):
                 typesIndex += 1
                 continue
+        # endregion
 
+        # region Retrieving the type from the english dB
+        meaningsEN = workingWorksheet.cell(row=typesIndex,
+                                           column=Constants.TYPES_COL_MEANINGS_EN if sheetNum != sheetNum_verbs else Constants.VERBS_COL_MEANINGS_EN
+                                           ).value
+        meaning_types = [wsLocalMeanings.cell(row=int(meaning_index), column=Constants.MEANINGS_COL_TYPE).value for meaning_index in str(meaningsEN).split(";")]
+
+        first_meaning_type = meaning_types[0]
+        use_english_type = False
+        if sheetNum == sheetNum_verbs or len(set(meaning_types)) == 1:  # ie. all meanings are the same
+            use_english_type = True
+        # endregion
+
+        romaji = romaji.replace(' ', '')
 
         localWordsList.append(Word(kanji, "", romaji, "", ""))
 
@@ -154,27 +176,43 @@ for i in range(0, 3):
 
             # print(word.romaji + "-" + word.kanji + "\n")
 
-            meaningIndexesFR = []
-            for j in range(len(word.french_meanings)):
-                wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_INDEX).value = meaningFRindex
-                wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_MEANING).value = word.french_meanings[j].replace('œ','oe')
-                wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_TYPE).value = ""
-                meaningIndexesFR.append(str(meaningFRindex))
-                meaningFRindex += 1
-            workingWorksheet.cell(row=typesIndex,
-                                  column=Constants.TYPES_COL_MEANINGS_FR if i < 2 else Constants.VERBS_COL_MEANINGS_FR
-                                  ).value = ";".join(meaningIndexesFR)
+            currentFRmeanings = workingWorksheet.cell(row=typesIndex,
+                                                      column=Constants.TYPES_COL_MEANINGS_FR if sheetNum != sheetNum_verbs else Constants.VERBS_COL_MEANINGS_FR
+                                                      ).value
+            if not currentFRmeanings or currentFRmeanings == "":
+                meaningIndexesFR = []
+                while wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_SOURCE).value == 'LOC':
+                    meaningFRindex += 1
+                for j in range(len(word.french_meanings)):
+                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_INDEX).value = meaningFRindex
+                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_MEANING).value = word.french_meanings[j].replace('œ', 'oe')
+                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_TYPE).value = first_meaning_type if use_english_type else ""
+                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_SOURCE).value = "JM"
+                    meaningIndexesFR.append(str(meaningFRindex))
+                    meaningFRindex += 1
+                workingWorksheet.cell(row=typesIndex,
+                                      column=Constants.TYPES_COL_MEANINGS_FR if sheetNum != sheetNum_verbs else Constants.VERBS_COL_MEANINGS_FR
+                                      ).value = ";".join(meaningIndexesFR)
 
-            meaningIndexesES = []
-            for j in range(len(word.spanish_meanings)):
-                wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_INDEX).value = meaningESindex
-                wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_MEANING).value = word.spanish_meanings[j]
-                wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_TYPE).value = ""
-                meaningIndexesES.append(str(meaningESindex))
-                meaningESindex += 1
-            workingWorksheet.cell(row=typesIndex,
-                                  column=Constants.TYPES_COL_MEANINGS_ES if i < 2 else Constants.VERBS_COL_MEANINGS_ES
-                                  ).value = ";".join(meaningIndexesES)
+            currentESmeanings = workingWorksheet.cell(row=typesIndex,
+                                                      column=Constants.TYPES_COL_MEANINGS_ES if sheetNum < 2 else Constants.VERBS_COL_MEANINGS_ES
+                                                      ).value
+            if not currentESmeanings or currentESmeanings == "":
+                meaningIndexesES = []
+                while wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_SOURCE).value == 'LOC':
+                    meaningESindex += 1
+                for j in range(len(word.spanish_meanings)):
+                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_INDEX).value = meaningESindex
+                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_MEANING).value = word.spanish_meanings[j]
+
+                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_TYPE).value = first_meaning_type if use_english_type else ""
+
+                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_SOURCE).value = "JM"
+                    meaningIndexesES.append(str(meaningESindex))
+                    meaningESindex += 1
+                workingWorksheet.cell(row=typesIndex,
+                                      column=Constants.TYPES_COL_MEANINGS_ES if sheetNum < 2 else Constants.VERBS_COL_MEANINGS_ES
+                                      ).value = ";".join(meaningIndexesES)
 
         typesIndex += 1
 # endregion
@@ -193,6 +231,6 @@ print("Number of new words: " + str(len(newWords)))
 
 # Saving the results
 localWordsWorkbook.save(
-    filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - updated with JMDict_foreign.xlsx')
+    filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx')
 localVerbsWorkbook.save(
-    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - updated with JMDict_foreign.xlsx')
+    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx')

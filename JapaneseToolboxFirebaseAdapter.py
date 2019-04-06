@@ -52,9 +52,9 @@ class Word(object):
 # region Getting the Excel sheets and their sizes
 # Preparing the excel sheet for writing
 localWordsWorkbook = openpyxl.load_workbook(
-    filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
+    filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - before foreign.xlsx', data_only=True)
 localVerbsWorkbook = openpyxl.load_workbook(
-    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
+    filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - before foreign.xlsx', data_only=True)
 
 # assign_sheet=wb.active
 wsLocalMeaningsEN = localWordsWorkbook["Meanings"]
