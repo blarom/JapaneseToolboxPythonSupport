@@ -664,8 +664,14 @@ class Converter:
             added_string = "go"
         elif character == "サ":
             added_string = "sa"
+
         elif character == "ス":
-            added_string = "su"
+            if character_next == "ゥ":
+                added_string = "su"
+                i += 1
+            else:
+                added_string = "su"
+
         elif character == "セ":
             added_string = "se"
         elif character == "ソ":

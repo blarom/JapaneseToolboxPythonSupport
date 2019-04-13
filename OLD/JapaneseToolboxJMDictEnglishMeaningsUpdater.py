@@ -2,6 +2,8 @@
 
 import re
 import openpyxl
+
+import Constants
 from JapaneseToolboxConverter import Converter
 
 current_entry = ''
@@ -435,24 +437,7 @@ with open("JMDict_e", encoding='utf-8') as infile:
                             common)
                 if create_suru_verb: word.hasSuruTwin = True
 
-                if (not ((word.romaji == "ha" or word.romaji == "wa") and word.kanji == "は")) \
-                        and (not ((word.romaji == "he" or word.romaji == "e") and word.kanji == "へ")) \
-                        and (not ((word.romaji == "deha" or word.romaji == "dewa") and word.kanji == "では")) \
-                        and (not ((word.romaji == "niha" or word.romaji == "niwa") and word.kanji == "には")) \
-                        and (not (word.romaji == "kana" and word.kanji == "かな")) \
-                        and (not (word.romaji == "to" and word.kanji == "と")) \
-                        and (not (word.romaji == "ya" and word.kanji == "や")) \
-                        and (not (word.romaji == "mo" and word.kanji == "も")) \
-                        and (not (word.romaji == "no" and word.kanji == "の")) \
-                        and (not (word.romaji == "n" and word.kanji == "ん")) \
-                        and (not (word.romaji == "wo" and word.kanji == "を")) \
-                        and (not (word.romaji == "wa" and word.kanji == "わ")) \
-                        and (not (word.romaji == "yo" and word.kanji == "よ")) \
-                        and (not (word.romaji == "na" and word.kanji == "な")) \
-                        and (not (word.romaji == "ka" and word.kanji == "か")) \
-                        and (not (word.romaji == "ga" and word.kanji == "が")) \
-                        and (not (word.romaji == "ni" and word.kanji == "に")) \
-                        and (not (word.kanji == "ケ" and word.kanji == "ヶ")):
+                if not [word.romaji, word.kanji] in Constants.EDICT_EXCEPTIONS and not ["*", word.kanji] in Constants.EDICT_EXCEPTIONS:
                     words.append(word)
 
                     if create_suru_verb:
