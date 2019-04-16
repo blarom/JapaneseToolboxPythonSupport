@@ -225,7 +225,7 @@ for word in jmDictWordsList:
     if index_of_first_hit == -1:
         newWords.append(word)
 
-print("Number of new words: " + str(len(newWords)))
+print("Number of words left out: " + str(len(newWords)))
 
 # endregion
 
