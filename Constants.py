@@ -165,6 +165,7 @@ EDICT_EXCEPTIONS = [
     ["kedo", "けど"],
     ["tokorode", "所で"],
     ["tame", "為"],
-    ["yori", "より"]
+    ["yori", "より"],
+    ["toiu", "と言う"]
 
 ]

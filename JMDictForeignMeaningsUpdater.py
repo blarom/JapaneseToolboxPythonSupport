@@ -4,7 +4,7 @@ import re
 import openpyxl
 
 import Constants
-from JapaneseToolboxConverter import Converter
+from Converter import Converter
 
 current_entry = ''
 
@@ -130,6 +130,9 @@ for sheetNum in range(0, 3):
 
     # region Row skip conditions
     while True:
+
+        romaji = ""
+        kanji = ""
         if sheetNum == sheetNum_types or sheetNum == sheetNum_grammar:
             romaji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_ROMAJI).value
             kanji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_KANJI).value

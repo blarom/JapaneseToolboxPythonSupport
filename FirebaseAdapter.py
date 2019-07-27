@@ -6,8 +6,6 @@ import openpyxl
 import re
 from keys import apiKey
 from keys import serviceAccount
-from openpyxl import Workbook
-from collections import namedtuple
 
 # region Initializing the Database
 config = {
@@ -105,10 +103,164 @@ while True:
         break
     lastLocalVerbsIndex += 1
 
-
 # endregion
 
 # region Defining the helper classes & methods for the database integration
+
+JISHO_TO_JT_LEGEND = {
+    "Adverb": "A",
+    "Abbreviation": "Abr",
+    "Noun or verb acting prenominally": "Af",
+    "I-adjective": "Ai",
+    "I-adjective (yoi/ii class)": "Ai",
+    "Kari adjective (archaic)": "Akari;ar",
+    "Ku-adjective (archaic)": "Aku;ar",
+    "Shiku adjective (archaic)": "Ashiku;ar",
+    "Adjective": "Aj",
+    "Na-adjective": "Ana",
+    "No-adjective": "Ano",
+    "Pre-noun adjectival": "Apn",
+    "Adverb taking the 'to' particle": "Ato",
+    "Taru-adjective": "Atr",
+    "Archaism": "ar",
+    "Auxiliary adjective": "Ax",
+    "Counter": "C",
+    "Expression": "CE",
+    "Conjunction": "CO",
+    "Food term": "Cu",
+    "Derogatory": "Dr",
+    "Proverb": "idp",
+    "Idiomatic expression": "idp",
+    "Rude or X-rated term": "IES",
+    "Colloquialism": "LF",
+    "Familiar language": "LF",
+    "Female term or language": "LFt",
+    "Humble (kenjougo)": "LHm",
+    "Honorific or respectful (sonkeigo)": "LHn",
+    "Polite (teineigo)": "LHn",
+    "Male term or language": "LMt",
+    "Music term": "MAC",
+    "Medicine, etc. term": "Md",
+    "Noun": "N",
+    "Adverbial noun": "NAdv",
+    "Proper noun": "Ne",
+    "Family or surname": "Ne",
+    "Male given name": "Ne",
+    "Female given name": "Ne",
+    "Full name": "Ne",
+    "Given name, gender not specified": "Ne",
+    "Numeric": "num",
+    "Out-dated kanji": "Obs",
+    "Obsolete term": "Obs",
+    "Obscure term": "Obs",
+    "Old or irregular kana form": "Obs",
+    "Out-dated or obsolete kana usage": "Obs",
+    "Interjection": "OI",
+    "Onomatopoeic or mimetic word": "OI",
+    "Pronoun": "P",
+    "Place": "Pl",
+    "Particle": "PP",
+    "Prefix": "Px",
+    "Noun - used as a prefix": "N;Px",
+    "Noun - used as a suffix": "N;Sx",
+    "Male slang": "Sl",
+    "Slang": "Sl", "Suffix": "Sx",
+    "Temporal noun": "N;T",
+    "Manga slang": "ZMg",
+    "Mahjong term": "ZMj",
+    "Military": "ZMl",
+    "Mathematics": "ZMt",
+    "Poetical term": "ZP",
+    "Physics terminology": "ZPh",
+    "Shogi term": "ZSg",
+    "Sumo term": "ZSm",
+    "Sports term": "ZSp",
+    "Shinto term": "ZSt",
+    "Zoology term": "ZZ",
+    "Auxiliary verb": "Vx",
+    "Architecture term": "ZAc",
+    "Anatomical term": "ZAn",
+    "Astronomy, etc. term": "ZAs",
+    "Buddhist term": "ZB",
+    "Baseball term": "ZBb",
+    "Biology term": "ZBi",
+    "Business term": "ZBs",
+    "Botany term": "ZBt",
+    "Chemistry term": "ZC",
+    "Children's language": "ZCL",
+    "Economics term": "ZEc",
+    "Engineering term": "ZEg",
+    "Finance term": "ZFn",
+    "Geometry term": "ZG",
+    "Geology, etc. term": "ZGg",
+    "Jocular, humorous term": "ZH",
+    "Computer terminology": "ZI",
+    "linguistics terminology": "ZL",
+    "Law, etc. term": "ZLw",
+    "Martial arts term": "ZM",
+    "Vulgar": "vul",
+    "Godan verb - aru special class": "VaruI",
+    "Godan verb - aru special class, intransitive verb": "VaruI",
+    "Godan verb - aru special class, Transitive verb": "VaruT",
+    "Godan verb with bu ending": "VbuI",
+    "Godan verb with bu ending, intransitive verb": "VbuI",
+    "Godan verb with bu ending, Transitive verb": "VbuT",
+    "Godan verb with gu ending": "VguI",
+    "Godan verb with gu ending, intransitive verb": "VguI",
+    "Godan verb with gu ending, Transitive verb": "VguT",
+    "Godan verb - Iku/Yuku special class": "VikuI",
+    "Godan verb - Iku/Yuku special class, intransitive verb": "VikuI",
+    "Godan verb - Iku/Yuku special class, Transitive verb": "VikuT",
+    "Godan verb with ku ending": "VkuI",
+    "Godan verb with ku ending, intransitive verb": "VkuI",
+    "Godan verb with ku ending, Transitive verb": "VkuT",
+    "Godan verb with mu ending": "VmuI",
+    "Godan verb with mu ending, intransitive verb": "VmuI",
+    "Godan verb with mu ending, Transitive verb": "VmuT",
+    "Godan verb with nu ending": "VnuI",
+    "Godan verb with nu ending, intransitive verb": "VnuI",
+    "Godan verb with nu ending, Transitive verb": "VnuT",
+    "Godan verb with ru ending": "VrugI",
+    "Godan verb with ru ending, intransitive verb": "VrugI",
+    "Godan verb with ru ending, Transitive verb": "VrugT",
+    "Godan verb with ru ending (irregular verb)": "VrugI",
+    "Godan verb with ru ending (irregular verb), intransitive verb": "VrugI",
+    "Godan verb with ru ending (irregular verb), Transitive verb": "VrugT",
+    "Ichidan verb": "VruiI",
+    "Ichidan verb, intransitive verb": "VruiI",
+    "Ichidan verb, Transitive verb": "VruiT",
+    "Godan verb with su ending": "VsuI",
+    "Godan verb with su ending, intransitive verb": "VsuI",
+    "Godan verb with su ending, Transitive verb": "VsuT",
+    "Godan verb with tsu ending": "VtsuI",
+    "Godan verb with tsu ending, intransitive verb": "VtsuI",
+    "Godan verb with tsu ending, Transitive verb": "VtsuT",
+    "Godan verb with u ending (special class)": "VusI",
+    "Godan verb with u ending (special class), intransitive verb": "VusI",
+    "Godan verb with u ending (special class), Transitive verb": "VusT",
+    "Godan verb with u ending": "VuI",
+    "Godan verb with u ending, intransitive verb": "VuI",
+    "Godan verb with u ending, Transitive verb": "VuT",
+    "Suru verb": "VsuruI",
+    "Suru verb, intransitive verb": "VsuruI",
+    "Suru verb, Transitive verb": "VsuruT",
+    "Suru verb - irregular": "VsuruI",
+    "Suru verb - irregular, intransitive verb": "VsuruI",
+    "Suru verb - irregular, Transitive verb": "VsuruT",
+    "Suru verb - special class": "VsuruI",
+    "Suru verb - special class, intransitive verb": "VsuruI",
+    "Suru verb - special class, Transitive verb": "VsuruT",
+    "Kuru verb - special class": "VkuruI",
+    "Kuru verb - special class, intransitive verb": "VkuruI",
+    "Kuru verb - special class, Transitive verb": "VkuruT"
+
+}
+
+LEGEND_SORTED_KEYS = list(JISHO_TO_JT_LEGEND.keys())
+LEGEND_SORTED_KEYS.sort(key=len, reverse=True)
+
+LEGEND_SORTED_VALUES = list(JISHO_TO_JT_LEGEND.values())
+LEGEND_SORTED_VALUES.sort(key=len, reverse=True)
 
 def getJTType(jishoType):
     if jishoType == "Adverb":
@@ -466,10 +618,7 @@ for wordKey in jishoWordsListFromFirebase.val():
 # endregion
 
 # region Iterating on the JishoWord list to integrate the words in the local sheets
-jishoWordIndex = 0
-while jishoWordIndex < len(jishoWords):
-
-    jishoWord = jishoWords[jishoWordIndex]
+for jishoWord in jishoWords:
 
     # region Getting the Jisho word's characteristics
     jishoWordRomaji = jishoWord.romaji
@@ -492,77 +641,87 @@ while jishoWordIndex < len(jishoWords):
         jishoWordTypesForSheetsOriginalList.append(jishoWordMeaningObject.grammarTypeForSheets)
     # endregion
 
-    # region Looping through the meanings to create the meanings/types/typesForSheet lists, and updating altSpellings for suru verbs
+    # region Cycling over the jishoType elements and creating the final jisho word's meanings array accordingly
+    # Also: updating or creating the suru verbs as necessary
+
+    # Skipping duplicate meanings while uniting their types
+    jishoWordMeaningsCondensed = []
+    jishoWordMeaningTypesCondensed = []
+    jishoWordTypesForSheetsCondensed = []
+    for jishoWordMeaningIndex in range(len(jishoWordMeaningsOriginalList)):
+
+        current_meaning = jishoWordMeaningsOriginalList[jishoWordMeaningIndex]
+        current_type = jishoWordMeaningTypesOriginalList[jishoWordMeaningIndex]
+        current_typeForSheet = jishoWordTypesForSheetsOriginalList[jishoWordMeaningIndex]
+
+        if current_meaning in jishoWordMeaningsCondensed:
+            index = jishoWordMeaningsCondensed.index(current_meaning)
+            jishoWordMeaningTypesCondensed[index] += ";" + current_type
+            jishoWordTypesForSheetsCondensed[index] += ";" + current_typeForSheet
+        else:
+            jishoWordMeaningsCondensed.append(current_meaning)
+            jishoWordMeaningTypesCondensed.append(current_type)
+            jishoWordTypesForSheetsCondensed.append(current_typeForSheet)
+
+
+    # Looping through the meanings to create the meanings/types/typesForSheet lists, and updating altSpellings for suru verbs
     jishoWordMeanings = []
     jishoWordMeaningTypes = []
     jishoWordTypesForSheets = []
-    for jishoWordMeaningIndex in range(len(jishoWordMeaningsOriginalList)):
+    for jishoWordMeaningIndex in range(len(jishoWordMeaningsCondensed)):
 
-        # region Getting the object meaning parameters
-        jishoWordMeaningString = jishoWordMeaningsOriginalList[jishoWordMeaningIndex]
-        jishoTypesString = jishoWordMeaningTypesOriginalList[jishoWordMeaningIndex]
-        jishoWordTypeForSheet = jishoWordTypesForSheetsOriginalList[jishoWordMeaningIndex]
-        # endregion
+        # Getting the object meaning parameters
+        jishoWordMeaningString = jishoWordMeaningsCondensed[jishoWordMeaningIndex]
+        jishoTypesString = jishoWordMeaningTypesCondensed[jishoWordMeaningIndex]
+        jishoWordTypeForSheet = jishoWordTypesForSheetsCondensed[jishoWordMeaningIndex]
 
-        # region Checking for critical attributes
-        if "Transitive verb" in jishoTypesString:
-            isTransitive = True
-        else:
-            isTransitive = False
+        # Converting to only JTTypes while keeping the order
+        typeElements = []
+        for item in jishoTypesString.split(";"):
+            if item in JISHO_TO_JT_LEGEND.keys():
+                typeElements.append(JISHO_TO_JT_LEGEND[item])
+            elif item in JISHO_TO_JT_LEGEND.values():
+                typeElements.append(item)
 
-        if ("Noun" in jishoTypesString) | ("Temporal noun" in jishoTypesString) | ("Proper noun" in jishoTypesString):
-            isDeclaredAsNoun = True
-        else:
-            isDeclaredAsNoun = False
+        # Adding meanings if necessary
+        typeElements_not_used_yet = typeElements
+        if 'Ana' in typeElements:
+            jishoWordMeanings.append(jishoWordMeaningString)
+            jishoWordMeaningTypes.append('Ana')
+            typeElements_not_used_yet.remove('Ana')
+            jishoWordTypesForSheets.append(jishoWordTypeForSheet)
 
-        if "Adverb" in jishoTypesString:
-            isDeclaredAsAdverb = True
-        else:
-            isDeclaredAsAdverb = False
-        # endregion
+            if 'A' in typeElements:
+                jishoWordMeanings.append(jishoWordMeaningString)
+                jishoWordMeaningTypes.append('A')
+                typeElements_not_used_yet.remove('A')
+                jishoWordTypesForSheets.append(jishoWordTypeForSheet)
 
-        # region Cycling over the jishoType elements and creating the jisho word's meanings array accordingly
-        # Also: updating or creating the suru verbs as necessary
-        typeElements = jishoTypesString.split(",")
-        for jishoTypeIndex in range(len(typeElements)):
+                if len(typeElements_not_used_yet) > 0:
+                    jishoWordMeanings.append(jishoWordMeaningString)
+                    jishoWordMeaningTypes.append(';'.join(typeElements_not_used_yet))
+                    jishoWordTypesForSheets.append(jishoWordTypeForSheet)
+            else:
+                if len(typeElements_not_used_yet) > 0:
+                    jishoWordMeanings.append(jishoWordMeaningString)
+                    jishoWordMeaningTypes.append(';'.join(typeElements_not_used_yet))
+                    jishoWordTypesForSheets.append(jishoWordTypeForSheet)
 
-            # region Converting the Jisho type to the Japanese Toolbox type
-            jishoType = typeElements[jishoTypeIndex].strip()
+        elif 'A' in typeElements:
+            jishoWordMeanings.append(jishoWordMeaningString)
+            jishoWordMeaningTypes.append('A')
+            typeElements_not_used_yet.remove('A')
+            jishoWordTypesForSheets.append(jishoWordTypeForSheet)
 
-            if ("verb" in jishoType) & ("ransitive" in jishoType):
-                jishoType = "Invalid"
-            elif ("verb" in jishoType) & (not jishoType == "Adverb") & isTransitive:
-                jishoType += "-Transitive"
-            elif ("verb" in jishoType) & (not jishoType == "Adverb") & (not isTransitive):
-                jishoType += "-Intransitive"
+            if len(typeElements_not_used_yet) > 0:
+                jishoWordMeanings.append(jishoWordMeaningString)
+                jishoWordMeaningTypes.append(';'.join(typeElements_not_used_yet))
+                jishoWordTypesForSheets.append(jishoWordTypeForSheet)
 
-            if ("No-adjective" in jishoType) & isDeclaredAsNoun:
-                jishoType = "Invalid"
-            elif ("No-adjective" in jishoType) & (not isDeclaredAsNoun):
-                jishoType = "Noun"
+        elif "V" in [item[0] for item in typeElements if item != 'VC']:
+            for jTType in typeElements:
+                if jTType == "": continue
 
-            if ("prenominally" in jishoType) & isDeclaredAsNoun:
-                jishoType = "Invalid"
-            elif ("prenominally" in jishoType) & (not isDeclaredAsNoun):
-                jishoType = "Noun"
-
-            if ("Adverbial noun" in jishoType) & isDeclaredAsNoun:
-                jishoType = "Invalid"
-            elif ("Adverbial noun" in jishoType) & (not isDeclaredAsNoun):
-                jishoType = "Noun"
-
-            if ("Adverb taking" in jishoType) & isDeclaredAsAdverb:
-                jishoType = "Invalid"
-            elif ("Adverb taking" in jishoType) & (not isDeclaredAsAdverb):
-                jishoType = "Adverb"
-
-            jTType = getJTType(jishoType)
-
-            if jTType == "": continue
-            # endregion
-
-            # region If the word is a verb then remove the "to ", and add the suru verbs to the list of Jisho Words if relevant
-            if len(jishoType) > 2:
                 if ((jTType == "VsuruT") | (jTType == "VsuruI")) \
                         and (" suru" not in jishoWordRomaji) \
                         and ("ssuru" not in jishoWordRomaji):
@@ -594,34 +753,46 @@ while jishoWordIndex < len(jishoWords):
                 elif ((jTType == "VsuruT") | (jTType == "VsuruI")) & ("ssuru" not in jishoWordRomaji):
                     jishoWordTypesForSheets.append("V")
                     jishoWordMeaningTypes.append(jTType)
+                    typeElements_not_used_yet.remove(jTType)
                     jishoWordMeanings.append(jishoWordMeaningString)
                 elif (jTType[0] == "V") & ((jTType[-1] == "I") | (jTType[-1] == "T")):
                     # If the word is a verb, remove the "to "
                     jishoWordMeaningString = jishoWordMeaningString.replace(", to ", ", ")
                     jishoWordMeaningString = jishoWordMeaningString[3:]
                     jishoWordTypesForSheets.append("V")
+                    typeElements_not_used_yet.remove(jTType)
                     jishoWordMeaningTypes.append(jTType)
                     jishoWordMeanings.append(jishoWordMeaningString)
-                elif (jTType == "VC") | (jTType == "CO") | (jTType == "PC") | (jTType == "PP") | (jTType == "iAC"):
+
+            if len(typeElements_not_used_yet) > 0:
+                jishoWordTypesForSheets.append("O")
+                jishoWordMeaningTypes.append(";".join(typeElements_not_used_yet))
+                jishoWordMeanings.append(jishoWordMeaningString)
+
+        else:
+            has_at_least_one_type = False
+            for jTType in typeElements:
+                if (jTType == "VC") | (jTType == "CO") | (jTType == "PC") | (jTType == "PP") | (jTType == "iAC") | (jTType == "naAC"):
                     jishoWordTypesForSheets.append("G")
                     jishoWordMeaningTypes.append(jTType)
+                    typeElements_not_used_yet.remove(jTType)
                     jishoWordMeanings.append(jishoWordMeaningString)
-                else:
-                    jishoWordTypesForSheets.append("O")
-                    jishoWordMeaningTypes.append(jTType)
-                    jishoWordMeanings.append(jishoWordMeaningString)
-            else:
-                jishoWordTypesForSheets.append("O")
-                jishoWordMeaningTypes.append(jTType)
-                jishoWordMeanings.append(jishoWordMeaningString)
-            # endregion
+                    has_at_least_one_type = True
 
-        # endregion
+            if len(typeElements_not_used_yet) > 0:
+                jishoWordTypesForSheets.append("O")
+                jishoWordMeaningTypes.append(";".join(typeElements_not_used_yet))
+                jishoWordMeanings.append(jishoWordMeaningString)
+            elif not has_at_least_one_type:
+                jishoWordTypesForSheets.append("O")
+                jishoWordMeaningTypes.append("CE")
+                jishoWordMeanings.append(jishoWordMeaningString)
+
     # endregion
 
     wordAlreadyExists = False
 
-    # Finding the identical local entry in the Grammar sheet
+    # region Finding the identical local entry in the Grammar sheet
     rowIndexInLocalWordSheet = 2
     while True:
         value = wsLocalGrammar.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_ROMAJI).value
@@ -718,8 +889,9 @@ while jishoWordIndex < len(jishoWords):
             break
 
         rowIndexInLocalWordSheet += 1
+    # endregion
 
-    # Finding the identical local entry in the Verbs sheet
+    # region Finding the identical local entry in the Verbs sheet
     rowIndexInLocalWordSheet = 4
     while True:
         value = wsLocalVerbs.cell(row=rowIndexInLocalWordSheet, column=Constants.VERBS_COL_ROMAJI).value
@@ -840,8 +1012,9 @@ while jishoWordIndex < len(jishoWords):
             break
 
         rowIndexInLocalWordSheet += 1
+    # endregion
 
-    # Finding the identical local entry in the Types sheet
+    # region Finding the identical local entry in the Types sheet
     rowIndexInLocalWordSheet = 2
     while True:
         value = wsLocalTypes.cell(row=rowIndexInLocalWordSheet, column=Constants.TYPES_COL_KANJI).value
@@ -950,8 +1123,9 @@ while jishoWordIndex < len(jishoWords):
             break
 
         rowIndexInLocalWordSheet += 1
+    # endregion
 
-    # If there are still meanings left unregistered, create a new entry to the Types sheet
+    # region If there are still meanings left unregistered, create a new entry to the Types sheet
     if not wordAlreadyExists:
 
         # Adding a new entry in the Local Types list
@@ -983,8 +1157,8 @@ while jishoWordIndex < len(jishoWords):
 
         # Incrementing the Type index for the next Jisho word
         lastLocalTypesIndex += 1
+    # endregion
 
-    jishoWordIndex += 1
 # endregion
 
 # region Saving the results

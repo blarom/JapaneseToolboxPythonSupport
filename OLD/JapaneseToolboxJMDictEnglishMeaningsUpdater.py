@@ -4,7 +4,7 @@ import re
 import openpyxl
 
 import Constants
-from JapaneseToolboxConverter import Converter
+from Converter import Converter
 
 current_entry = ''
 VERB_PARTS_OF_SPEECH = ['Vrui', 'Vbu', 'Vgu', 'Vku', 'Vmu', 'Vnu', 'Vrug', 'Vsu', 'Vtsu', 'Vu', 'Vi', 'Viku', 'Vus', 'Varu', 'Vkuru', 'Vsuru']
