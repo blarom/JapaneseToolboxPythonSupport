@@ -462,7 +462,7 @@ with open("JMDict.xml", encoding='utf-8') as infile:
             for i in range(0, len(tempMeanings)):
                 if tempMeanings[i] != '':
                     types_for_word.append(tempPOS[i])
-                    english_meanings_for_word.append(tempMeanings[i])
+                    english_meanings_for_word.append(tempMeanings[i].replace('"','\'').replace('&amp;','&').replace('&gt;','>').replace('&lt;','<'))
             # endregion
 
             # region Creating the words
