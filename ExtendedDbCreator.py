@@ -1,5 +1,8 @@
 #!/usr/bin/python -tt
 
+#Windows Powershell grep:
+#Select-String -Path .\JMdict.xml -Pattern "CNET" -Context 4,4
+
 import re
 import openpyxl
 
@@ -462,7 +465,11 @@ with open("JMDict.xml", encoding='utf-8') as infile:
             for i in range(0, len(tempMeanings)):
                 if tempMeanings[i] != '':
                     types_for_word.append(tempPOS[i])
-                    english_meanings_for_word.append(tempMeanings[i].replace('"','\'').replace('&amp;','&').replace('&gt;','>').replace('&lt;','<'))
+                    english_meanings_for_word.append(tempMeanings[i]
+                                                     .replace('"','\'')
+                                                     .replace('&amp;','&')
+                                                     .replace('&gt;','>')
+                                                     .replace('&lt;','<'))
             # endregion
 
             # region Creating the words
@@ -577,9 +584,9 @@ for word in newWords:
 
     types = '#'.join(word.types_for_word)
     altS = '#'.join(word.altSpellings)
-    meaningsEN = '#'.join(word.english_meanings)
-    meaningsFR = '#'.join(word.french_meanings)
-    meaningsES = '#'.join(word.spanish_meanings)
+    meaningsEN = '#'.join(word.english_meanings).replace('|','-')
+    meaningsFR = '#'.join(word.french_meanings).replace('|','-')
+    meaningsES = '#'.join(word.spanish_meanings).replace('|','-')
     wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_INDEX).value = row_index
     wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_ROMAJI).value = word.romaji
     wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_KANJI).value = word.kanji
