@@ -457,7 +457,7 @@ with open("JMDict.xml", encoding='utf-8') as infile:
                 if len(spanish_meanings_in_sense) > 0: spanish_meanings.append(", ".join(spanish_meanings_in_sense))
             # endregion
 
-            # Cleaning the POS and english meanings
+            # Cleaning the POS and meanings
             tempPOS = types_for_word
             tempMeanings = english_meanings_for_word
             types_for_word = []
@@ -466,7 +466,28 @@ with open("JMDict.xml", encoding='utf-8') as infile:
                 if tempMeanings[i] != '':
                     types_for_word.append(tempPOS[i])
                     english_meanings_for_word.append(tempMeanings[i]
-                                                     .replace('"','\'')
+                                                     .replace('"','$$$$')
+                                                     .replace('#','@@@@')
+                                                     .replace('&amp;','&')
+                                                     .replace('&gt;','>')
+                                                     .replace('&lt;','<'))
+            tempMeanings = french_meanings_in_sense
+            french_meanings_in_sense = []
+            for i in range(0, len(tempMeanings)):
+                if tempMeanings[i] != '':
+                    french_meanings_in_sense.append(tempMeanings[i]
+                                                     .replace('"','$$$$')
+                                                     .replace('#','@@@@')
+                                                     .replace('&amp;','&')
+                                                     .replace('&gt;','>')
+                                                     .replace('&lt;','<'))
+            tempMeanings = spanish_meanings_in_sense
+            spanish_meanings_in_sense = []
+            for i in range(0, len(tempMeanings)):
+                if tempMeanings[i] != '':
+                    spanish_meanings_in_sense.append(tempMeanings[i]
+                                                     .replace('"','$$$$')
+                                                     .replace('#','@@@@')
                                                      .replace('&amp;','&')
                                                      .replace('&gt;','>')
                                                      .replace('&lt;','<'))
@@ -650,11 +671,11 @@ for word in newWords:
 
 # region Creating the indexes
 print("Creating the indexes")
-wsExtendedWordsKanjiIndexCSV_rows = ['word|indexes|']
-wsExtendedWordsRomajiIndexCSV_rows = ['word|indexes|']
-wsExtendedWordsEnglishIndexCSV_rows = ['word|indexes|']
-wsExtendedWordsFrenchIndexCSV_rows = ['word|indexes|']
-wsExtendedWordsSpanishIndexCSV_rows = ['word|indexes|']
+wsExtendedWordsKanjiIndexCSV_rows = ['value|word_ids|']
+wsExtendedWordsRomajiIndexCSV_rows = ['value|word_ids|']
+wsExtendedWordsEnglishIndexCSV_rows = ['value|word_ids|']
+wsExtendedWordsFrenchIndexCSV_rows = ['value|word_ids|']
+wsExtendedWordsSpanishIndexCSV_rows = ['value|word_ids|']
 row_index = 1
 index_dict_keys_sorted = list(romaji_index_dict.keys())
 index_dict_keys_sorted.sort()

@@ -27,7 +27,7 @@ for lineFile in lineFiles:
         sql_content += '`' + column_names[0].replace(' ', '_').replace('\\', '\\\\') + '` TEXT CHARACTER SET utf8,\n'
         start_row = 0
     elif 'Extended' in lineFile and 'Index' in table_name:
-        column_names = ["word", "indexes"]
+        column_names = ["value", "word_ids"]
         sql_content += '`' + column_names[0].replace(' ', '_').replace('\\', '\\\\') + '` TEXT CHARACTER SET utf8,\n'
         start_row = 0
     elif 'IndexKanji' in table_name:
