@@ -181,6 +181,11 @@ EDICT_EXCEPTIONS = [
     ["tokorode", "所で"],
     ["tame", "為"],
     ["yori", "より"],
-    ["toiu", "と言う"]
+    ["toiu", "と言う"],
+
+    ["mataha", "又は"]
+    ["konnichiha","今日は"]
+    ["konnichiwa","こんにちわ"]
+    ["konnichiwa","今日わ"]
 
 ]

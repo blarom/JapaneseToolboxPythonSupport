@@ -50,7 +50,7 @@ LEGEND_DICT = {
     'hon': 'LHn',
     'hum': 'LHm',
     'iK': '',
-    'id': 'CES',
+    'id': 'idp',
     'ik': '',
     'int': 'OI',
     'io': '',
@@ -570,6 +570,7 @@ for sheetNum in range(0, 3):
         # endregion
 
         romaji = romaji.replace(' ', '')
+        kanji = kanji.replace('～','')
         localWordsList.append(Word(kanji=kanji, romaji=romaji))
 
         typesIndex += 1
@@ -719,14 +720,15 @@ for key in index_dict_keys_sorted:
     wsExtendedWordsKanjiIndex.cell(row=row_index, column=1).value = convert_from_utf8(key)
     wsExtendedWordsKanjiIndex.cell(row=row_index, column=2).value = ';'.join(kanji_index_dict[key])
     wsExtendedWordsKanjiIndex.cell(row=row_index, column=3).value = key
-    wsExtendedWordsKanjiIndexCSV_rows.append(wsExtendedWordsKanjiIndex.cell(row=row_index, column=1).value + '|' + wsExtendedWordsKanjiIndex.cell(row=row_index, column=2).value + '|')
+    wsExtendedWordsKanjiIndexCSV_rows.append(wsExtendedWordsKanjiIndex.cell(row=row_index, column=1).value + '|'
+                                             + wsExtendedWordsKanjiIndex.cell(row=row_index, column=2).value + '|')
     row_index += 1
 # endregion
 
 # Saving the results
 print("Saving the results")
 extendedWordsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Extended Words - 3000 kanji.xlsx')
-base = 'C:/Projects/Workspace/JapaneseToolbox/app/src/main/assets/LineExtendedDb - '
+base = 'C:/Projects/Workspace/Japagram/app/src/main/assets/LineExtendedDb - '
 with open(base + 'Words.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsCSV_rows))
 with open(base + 'KanjiIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsKanjiIndexCSV_rows))
 with open(base + 'RomajiIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsRomajiIndexCSV_rows))

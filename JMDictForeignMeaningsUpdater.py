@@ -187,8 +187,11 @@ for sheetNum in range(0, 3):
                 while wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_SOURCE).value == 'LOC':
                     meaningFRindex += 1
                 for j in range(len(word.french_meanings)):
+                    fixed_meanings = word.french_meanings[j].replace('œ', 'oe')
+                    fixed_meanings = re.sub(r'(\d),(\d)','\1.\2',fixed_meanings)
+
                     wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_INDEX).value = meaningFRindex
-                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_MEANING).value = word.french_meanings[j].replace('œ', 'oe')
+                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_MEANING).value = fixed_meanings
                     wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_TYPE).value = first_meaning_type if use_english_type else ""
                     wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_SOURCE).value = "JM"
                     meaningIndexesFR.append(str(meaningFRindex))
@@ -205,11 +208,10 @@ for sheetNum in range(0, 3):
                 while wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_SOURCE).value == 'LOC':
                     meaningESindex += 1
                 for j in range(len(word.spanish_meanings)):
+                    fixed_meanings = re.sub(r'(\d),(\d)','\1.\2',word.spanish_meanings[j])
                     wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_INDEX).value = meaningESindex
-                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_MEANING).value = word.spanish_meanings[j]
-
+                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_MEANING).value = fixed_meanings
                     wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_TYPE).value = first_meaning_type if use_english_type else ""
-
                     wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_SOURCE).value = "JM"
                     meaningIndexesES.append(str(meaningESindex))
                     meaningESindex += 1

@@ -1,7 +1,7 @@
 #!/usr/bin/python -tt
 
-#Windows Powershell grep:
-#Select-String -Path .\JMdict.xml -Pattern "CNET" -Context 4,4
+# Windows Powershell grep:
+# Select-String -Path .\JMdict.xml -Pattern "CNET" -Context 4,4
 
 import re
 import openpyxl
@@ -12,19 +12,19 @@ from Converter import Converter
 current_entry = ''
 
 LEGEND_DICT = {
-    "surname": "NmSu",
-    "place": "NmPl",
-    "unclass": "NmU",
-    "company": "NmC",
-    "product": "NmPr",
-    "work": "NmW",
-    "masc": "NmM",
-    "fem": "NmF",
-    "person": "NmPe",
-    "given": "NmG",
-    "station": "NmSt",
-    "organization": "NmO",
-    "ok": "NmI",
+    "surname": '0',  # "NmSu",
+    "place": '1',  # "NmPl",
+    "unclass": '2',  # "NmU",
+    "company": '3',  # "NmC",
+    "product": '4',  # "NmPr",
+    "work": '5',  # "NmW",
+    "masc": '6',  # "NmM",
+    "fem": '7',  # "NmF",
+    "person": '8',  # "NmPe",
+    "given": '9',  # "NmG",
+    "station": '10',  # "NmSt",
+    "organization": '11',  # "NmO",
+    "ok": '12',  # "NmI",
 }
 
 # region Preparations
@@ -36,7 +36,7 @@ wsLocalMeanings = localWordsWorkbook["Meanings"]
 wsLocalTypes = localWordsWorkbook["Types"]
 wsExtendedWords = namesWorkbook["Words"]
 wsExtendedWordsRomajiIndex = namesWorkbook["RomajiIndex"]
-wsExtendedWordsKanjiIndex = namesWorkbook["KanjiIndex"]
+wsNamesKanjiIndex = namesWorkbook["KanjiIndex"]
 
 
 class Word:
@@ -144,13 +144,15 @@ with open("JMneDict.xml", encoding='utf-8') as infile:
                 # region Getting the classification
                 match = re.search(r"<name_type>&(.+?);</name_type>", trans[i])
                 if match:
-                    if match.group(1) in LEGEND_DICT.keys(): classifications.append(LEGEND_DICT[match.group(1)])
-                    else: classifications.append(match.group(1))
+                    if match.group(1) in LEGEND_DICT.keys():
+                        classifications.append(LEGEND_DICT[match.group(1)])
+                    else:
+                        classifications.append(match.group(1))
                 # endregion
 
                 # region Getting the english
-                matches = re.search(r"<trans_det>(.+?)</trans_det>", trans[i])
-                if match: englishes.append(match.group(1).replace('"','$$$$').replace('#','@@@@').replace('&amp;','&'))
+                match = re.search(r"<trans_det>(.+?)</trans_det>", trans[i])
+                if match: englishes.append(match.group(1).replace('"', '$$$$').replace('#', '@@@@').replace('&amp;', '&'))
                 # endregion
 
                 i += 1
@@ -164,7 +166,7 @@ with open("JMneDict.xml", encoding='utf-8') as infile:
                             hiragana.replace('・', ''),
                             romaji.replace('・', ''),
                             classifications,
-                            englishes)
+                            [])  # Setting englishes to [] to reduce db size and load time, since the main need is for romaji<->kanji interpretation
 
                 if not [word.romaji, word.kanji] in Constants.EDICT_EXCEPTIONS and not ["*", word.kanji] in Constants.EDICT_EXCEPTIONS:
                     words.append(word)
@@ -195,6 +197,7 @@ while True:
     # endregion
 
     romaji = romaji.replace(' ', '')
+    kanji = kanji.replace('～', '')
     localWordsList.append(Word(kanji=kanji, romaji=romaji))
 
     typesIndex += 1
@@ -215,7 +218,7 @@ wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_ROMAJI).value = "romaj
 wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_KANJI).value = "kanji"
 wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_POS).value = "classifications"
 wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_MEANINGS_EN).value = "englishes"
-wsExtendedWordsCSV_rows = ['|'.join(["Index", "romaji", "kanji", "classifications", "englishes"]) + '|']
+wsExtendedWordsCSV_rows = ['|'.join(["Index", "romaji", "kanji", "classifications"]) + '|']
 row_index = 2
 romaji_index_dict = {}
 english_index_dict = {}
@@ -225,13 +228,14 @@ for word in newWords:
 
     classifications_final = '#'.join(word.classifications)
     englishes_final = '#'.join(word.englishes)
+
     wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_INDEX).value = row_index
     wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_ROMAJI).value = word.romaji
     wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_KANJI).value = word.kanji
     wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_CLASSIFICATION).value = classifications_final
-    wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_ENGLISH).value = englishes_final
+    wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_CLASSIFICATION).value = englishes_final
 
-    wsExtendedWordsCSV_rows.append('|'.join([str(row_index), word.romaji, word.kanji, classifications_final, englishes_final]) + '|')
+    wsExtendedWordsCSV_rows.append('|'.join([str(row_index), word.romaji, word.kanji, classifications_final]) + '|')
 
     add_index_to_dict(romaji_index_dict, str(row_index), word.romaji)
     add_index_to_dict(kanji_index_dict, str(row_index), convert_to_utf8(word.kanji))
@@ -243,31 +247,33 @@ for word in newWords:
 # region Creating the indexes
 print("Creating the indexes")
 wsExtendedWordsKanjiIndexCSV_rows = ['value|word_ids|']
-wsExtendedWordsRomajiIndexCSV_rows = ['value|word_ids|']
+wsNamesRomajiIndexCSV_rows = ['value|word_ids|']
 row_index = 1
 index_dict_keys_sorted = list(romaji_index_dict.keys())
 index_dict_keys_sorted.sort()
 for key in index_dict_keys_sorted:
     wsExtendedWordsRomajiIndex.cell(row=row_index, column=1).value = key
     wsExtendedWordsRomajiIndex.cell(row=row_index, column=2).value = ';'.join(romaji_index_dict[key])
-    wsExtendedWordsRomajiIndexCSV_rows.append(key + '|' + wsExtendedWordsRomajiIndex.cell(row=row_index, column=2).value + '|')
+    wsNamesRomajiIndexCSV_rows.append(key + '|' + wsExtendedWordsRomajiIndex.cell(row=row_index, column=2).value + '|')
     row_index += 1
 
 row_index = 1
 index_dict_keys_sorted = list(kanji_index_dict.keys())
 index_dict_keys_sorted.sort()
 for key in index_dict_keys_sorted:
-    wsExtendedWordsKanjiIndex.cell(row=row_index, column=1).value = convert_from_utf8(key)
-    wsExtendedWordsKanjiIndex.cell(row=row_index, column=2).value = ';'.join(kanji_index_dict[key])
-    wsExtendedWordsKanjiIndex.cell(row=row_index, column=3).value = key
-    wsExtendedWordsKanjiIndexCSV_rows.append(wsExtendedWordsKanjiIndex.cell(row=row_index, column=1).value + '|' + wsExtendedWordsKanjiIndex.cell(row=row_index, column=2).value + '|')
+    wsNamesKanjiIndex.cell(row=row_index, column=1).value = convert_from_utf8(key)
+    wsNamesKanjiIndex.cell(row=row_index, column=2).value = ';'.join(kanji_index_dict[key])
+    wsNamesKanjiIndex.cell(row=row_index, column=3).value = key
+    wsExtendedWordsKanjiIndexCSV_rows.append(wsNamesKanjiIndex.cell(row=row_index, column=1).value + '|'
+                                             + wsNamesKanjiIndex.cell(row=row_index, column=2).value + '|')
     row_index += 1
 # endregion
 
 # Saving the results
 print("Saving the results")
 namesWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Names - 3000 kanji.xlsx')
-base = 'C:/Projects/Workspace/Web/JT database'
+base = 'C:/Projects/Workspace/Japagram/app/src/main/assets/LineNamesDb - '
+# base = 'C:/Projects/Workspace/Web/JT database'
 with open(base + 'Words.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsCSV_rows))
 with open(base + 'KanjiIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsKanjiIndexCSV_rows))
-with open(base + 'RomajiIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsRomajiIndexCSV_rows))
+with open(base + 'RomajiIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsNamesRomajiIndexCSV_rows))
