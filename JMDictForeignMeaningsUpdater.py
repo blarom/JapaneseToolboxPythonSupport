@@ -188,7 +188,7 @@ for sheetNum in range(0, 3):
                     meaningFRindex += 1
                 for j in range(len(word.french_meanings)):
                     fixed_meanings = word.french_meanings[j].replace('œ', 'oe')
-                    fixed_meanings = re.sub(r'(\d),(\d)','\1.\2',fixed_meanings)
+                    fixed_meanings = re.sub(r'(\d),(\d)', r'\g<1>.\g<2>', fixed_meanings)
 
                     wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_INDEX).value = meaningFRindex
                     wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_MEANING).value = fixed_meanings
@@ -208,7 +208,7 @@ for sheetNum in range(0, 3):
                 while wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_SOURCE).value == 'LOC':
                     meaningESindex += 1
                 for j in range(len(word.spanish_meanings)):
-                    fixed_meanings = re.sub(r'(\d),(\d)','\1.\2',word.spanish_meanings[j])
+                    fixed_meanings = re.sub(r'(\d),(\d)', r'\g<1>.\g<2>', word.spanish_meanings[j])
                     wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_INDEX).value = meaningESindex
                     wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_MEANING).value = fixed_meanings
                     wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_TYPE).value = first_meaning_type if use_english_type else ""
