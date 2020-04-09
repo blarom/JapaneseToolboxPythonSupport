@@ -1,3 +1,7 @@
+
+from openpyxl.utils.cell import coordinate_from_string, column_index_from_string
+
+
 TYPES_COL_INDEX = 1
 TYPES_COL_ROMAJI = 2
 TYPES_COL_KANJI = 3
@@ -216,22 +220,32 @@ def clearSheet(wb, sheet_name):
     wb.create_sheet(sheet_name, idx)
 
 
-def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row):
+def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row=False, start_row=1):
     fh = open(ASSETS_PATH + '/' + csv_name + ".csv", 'w+', encoding='utf-8')
     content_lines = []
-    idx = 1
-    while not isLastRow(ws, idx):
-        content_lines.append("|".join([ws.cell(row=idx, column=col).value for col in range(start_col, end_col)]))
-        idx += 1
+    index = start_row
+    while not isLastRow(ws, index):
+        line = "|".join([str(ws.cell(row=index, column=col).value) if ws.cell(row=index, column=col).value is not None else "" for col in range(start_col, end_col+1)])
+        if line: content_lines.append(line)
+        index += 1
         if only_first_row: break
     fh.write('\n'.join(content_lines))
     fh.close()
 
 
-def isLastRow(sheet, idx):
-    return all(not item for item in [sheet.cell(row=idx, column=col).value for col in range(1, 10)]) and all(
-        not item for item in [sheet.cell(row=idx + 1, column=col).value for col in range(1, 10)])
+def isLastRow(sheet, index):
+    return all(not item for item in [sheet.cell(row=index, column=col).value for col in list(range(1, 10))+list(range(41, 50))]) and all(
+        not item for item in [sheet.cell(row=index + 1, column=col).value for col in list(range(1, 10))+list(range(41, 50))])
 
 
-def isIrrelevantRow(sheet, idx):
-    return all(not item for item in [sheet.cell(row=idx, column=col).value for col in [TYPES_COL_ROMAJI, TYPES_COL_KANJI, TYPES_COL_ALTS, TYPES_COL_COMMON, TYPES_COL_KW_JAP]])
+def isIrrelevantRow(sheet, index):
+    return all(not item for item in [sheet.cell(row=index, column=col).value for col in [TYPES_COL_ROMAJI, TYPES_COL_KANJI, TYPES_COL_ALTS, TYPES_COL_COMMON, TYPES_COL_KW_JAP]])
+
+
+def name(text):
+    return f"Line{text} - 3000 kanji - test"
+
+
+def idx(text):
+    return column_index_from_string(text)
+
