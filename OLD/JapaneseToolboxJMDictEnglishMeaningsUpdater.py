@@ -3,7 +3,7 @@
 import re
 import openpyxl
 
-import Constants
+import Globals
 from Converter import Converter
 
 current_entry = ''
@@ -437,7 +437,7 @@ with open("JMDict_e", encoding='utf-8') as infile:
                             common)
                 if create_suru_verb: word.hasSuruTwin = True
 
-                if not [word.romaji, word.kanji] in Constants.EDICT_EXCEPTIONS and not ["*", word.kanji] in Constants.EDICT_EXCEPTIONS:
+                if not [word.romaji, word.kanji] in Globals.EDICT_EXCEPTIONS and not ["*", word.kanji] in Globals.EDICT_EXCEPTIONS:
                     words.append(word)
 
                     if create_suru_verb:

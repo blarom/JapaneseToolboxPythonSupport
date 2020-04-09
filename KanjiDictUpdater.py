@@ -3,7 +3,7 @@
 import re
 import openpyxl
 
-import Constants
+import Globals
 from Converter import Converter
 
 current_character = ''

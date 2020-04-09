@@ -6,7 +6,7 @@
 import re
 import openpyxl
 
-import Constants
+import Globals
 from Converter import Converter
 
 current_entry = ''
@@ -251,12 +251,8 @@ def add_index_to_dict(index_dict, index, key):
         index_dict[key] = [index]
 
 
-def convert_to_utf8(text):
-    return '1.' + text.encode('utf-8').hex()
 
 
-def convert_from_utf8(text):
-    return bytearray.fromhex(text[2:]).decode()
 
 
 def binary_search(words_list, text, lo=0, hi=None):
@@ -508,7 +504,7 @@ with open("JMDict.xml", encoding='utf-8') as infile:
                             types_for_word,
                             common)
 
-                if not [word.romaji, word.kanji] in Constants.EDICT_EXCEPTIONS and not ["*", word.kanji] in Constants.EDICT_EXCEPTIONS:
+                if not [word.romaji, word.kanji] in Globals.EDICT_EXCEPTIONS and not ["*", word.kanji] in Globals.EDICT_EXCEPTIONS:
                     words.append(word)
 
                 if len(words) % 100 == 0:
@@ -549,15 +545,15 @@ for sheetNum in range(0, 3):
         romaji = ""
         kanji = ""
         if sheetNum == sheetNum_types or sheetNum == sheetNum_grammar:
-            romaji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_ROMAJI).value
-            kanji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_KANJI).value
+            romaji = workingWorksheet.cell(row=typesIndex, column=Globals.TYPES_COL_ROMAJI).value
+            kanji = workingWorksheet.cell(row=typesIndex, column=Globals.TYPES_COL_KANJI).value
 
             if (romaji == "" or not romaji or romaji is None) or (kanji == "" or not kanji or kanji is None):
                 break
 
         elif sheetNum == sheetNum_verbs:
-            romaji = workingWorksheet.cell(row=typesIndex, column=Constants.VERBS_COL_ROMAJI).value
-            kanji = workingWorksheet.cell(row=typesIndex, column=Constants.VERBS_COL_KANJI).value
+            romaji = workingWorksheet.cell(row=typesIndex, column=Globals.VERBS_COL_ROMAJI).value
+            kanji = workingWorksheet.cell(row=typesIndex, column=Globals.VERBS_COL_KANJI).value
 
             if (workingWorksheet.cell(row=typesIndex, column=1).value == '-'
                     and workingWorksheet.cell(row=typesIndex, column=2).value == '-'
@@ -586,14 +582,14 @@ for word in jmDictWordsList:
 
 # region Creating the Extended Words sheet and index dicts
 print("Creating the Extended Words sheet and index dicts")
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_INDEX).value = "Index"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_ROMAJI).value = "romaji"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_KANJI).value = "kanji"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_POS).value = "POS"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_ALTS).value = "altSpellings"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_MEANINGS_EN).value = "meaningsEN"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_MEANINGS_FR).value = "meaningsFR"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_MEANINGS_ES).value = "meaningsES"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_INDEX).value = "Index"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_ROMAJI).value = "romaji"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_KANJI).value = "kanji"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_POS).value = "POS"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_ALTS).value = "altSpellings"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_MEANINGS_EN).value = "meaningsEN"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_MEANINGS_FR).value = "meaningsFR"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_MEANINGS_ES).value = "meaningsES"
 wsExtendedWordsCSV_rows = ['|'.join(["Index", "romaji", "kanji", "POS", "altSpellings", "meaningsEN", "meaningsFR", "meaningsES"]) + '|']
 row_index = 2
 romaji_index_dict = {}
@@ -609,19 +605,19 @@ for word in newWords:
     meaningsEN = '#'.join(word.english_meanings).replace('|','-')
     meaningsFR = '#'.join(word.french_meanings).replace('|','-')
     meaningsES = '#'.join(word.spanish_meanings).replace('|','-')
-    wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_INDEX).value = row_index
-    wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_ROMAJI).value = word.romaji
-    wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_KANJI).value = word.kanji
-    wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_POS).value = types
-    wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_ALTS).value = altS
-    wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_MEANINGS_EN).value = meaningsEN
-    wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_MEANINGS_FR).value = meaningsFR
-    wsExtendedWords.cell(row=row_index, column=Constants.EXT_WORD_COL_MEANINGS_ES).value = meaningsES
+    wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_INDEX).value = row_index
+    wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_ROMAJI).value = word.romaji
+    wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_KANJI).value = word.kanji
+    wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_POS).value = types
+    wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_ALTS).value = altS
+    wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_MEANINGS_EN).value = meaningsEN
+    wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_MEANINGS_FR).value = meaningsFR
+    wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_MEANINGS_ES).value = meaningsES
 
     wsExtendedWordsCSV_rows.append('|'.join([str(row_index), word.romaji, word.kanji, types, altS, meaningsEN, meaningsFR, meaningsES]) + '|')
 
     add_index_to_dict(romaji_index_dict, str(row_index), word.romaji)
-    add_index_to_dict(kanji_index_dict, str(row_index), convert_to_utf8(word.kanji))
+    add_index_to_dict(kanji_index_dict, str(row_index), Globals.convert_to_utf8(word.kanji))
 
     for altSpelling in word.altSpellings:
         if altSpelling == '': continue
@@ -629,7 +625,7 @@ for word in newWords:
         if match:
             add_index_to_dict(romaji_index_dict, str(row_index), altSpelling.lower())
         else:
-            add_index_to_dict(kanji_index_dict, str(row_index), convert_to_utf8(altSpelling))
+            add_index_to_dict(kanji_index_dict, str(row_index), Globals.convert_to_utf8(altSpelling))
 
     for meaning in word.english_meanings:
         clean_meaning = meaning
@@ -717,7 +713,7 @@ row_index = 1
 index_dict_keys_sorted = list(kanji_index_dict.keys())
 index_dict_keys_sorted.sort()
 for key in index_dict_keys_sorted:
-    wsExtendedWordsKanjiIndex.cell(row=row_index, column=1).value = convert_from_utf8(key)
+    wsExtendedWordsKanjiIndex.cell(row=row_index, column=1).value = Globals.convert_from_utf8(key)
     wsExtendedWordsKanjiIndex.cell(row=row_index, column=2).value = ';'.join(kanji_index_dict[key])
     wsExtendedWordsKanjiIndex.cell(row=row_index, column=3).value = key
     wsExtendedWordsKanjiIndexCSV_rows.append(wsExtendedWordsKanjiIndex.cell(row=row_index, column=1).value + '|'
@@ -727,7 +723,7 @@ for key in index_dict_keys_sorted:
 
 # Saving the results
 print("Saving the results")
-extendedWordsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Extended Words - 3000 kanji.xlsx')
+#extendedWordsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Extended Words - 3000 kanji.xlsx')
 base = 'C:/Projects/Workspace/Japagram/app/src/main/assets/LineExtendedDb - '
 with open(base + 'Words.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsCSV_rows))
 with open(base + 'KanjiIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsKanjiIndexCSV_rows))

@@ -3,7 +3,7 @@
 import re
 import openpyxl
 
-import Constants
+import Globals
 from Converter import Converter
 
 current_entry = ''
@@ -134,14 +134,14 @@ for sheetNum in range(0, 3):
         romaji = ""
         kanji = ""
         if sheetNum == sheetNum_types or sheetNum == sheetNum_grammar:
-            romaji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_ROMAJI).value
-            kanji = workingWorksheet.cell(row=typesIndex, column=Constants.TYPES_COL_KANJI).value
+            romaji = workingWorksheet.cell(row=typesIndex, column=Globals.TYPES_COL_ROMAJI).value
+            kanji = workingWorksheet.cell(row=typesIndex, column=Globals.TYPES_COL_KANJI).value
 
             if (romaji == "" or not romaji or romaji is None) or (kanji == "" or not kanji or kanji is None):
                 break
         elif sheetNum == sheetNum_verbs:
-            romaji = workingWorksheet.cell(row=typesIndex, column=Constants.VERBS_COL_ROMAJI).value
-            kanji = workingWorksheet.cell(row=typesIndex, column=Constants.VERBS_COL_KANJI).value
+            romaji = workingWorksheet.cell(row=typesIndex, column=Globals.VERBS_COL_ROMAJI).value
+            kanji = workingWorksheet.cell(row=typesIndex, column=Globals.VERBS_COL_KANJI).value
 
             if (workingWorksheet.cell(row=typesIndex, column=1).value == '-'
                     and workingWorksheet.cell(row=typesIndex, column=2).value == '-'
@@ -155,9 +155,10 @@ for sheetNum in range(0, 3):
 
         # region Retrieving the type from the english dB
         meaningsEN = workingWorksheet.cell(row=typesIndex,
-                                           column=Constants.TYPES_COL_MEANINGS_EN if sheetNum != sheetNum_verbs else Constants.VERBS_COL_MEANINGS_EN
+                                           column=Globals.TYPES_COL_MEANINGS_EN if sheetNum != sheetNum_verbs else Globals.VERBS_COL_MEANINGS_EN
                                            ).value
-        meaning_types = [wsLocalMeanings.cell(row=int(meaning_index), column=Constants.MEANINGS_COL_TYPE).value for meaning_index in str(meaningsEN).split(";")]
+
+        meaning_types = [wsLocalMeanings.cell(row=int(meaning_index), column=Globals.MEANINGS_COL_TYPE).value for meaning_index in str(meaningsEN).split(";")]
 
         first_meaning_type = meaning_types[0]
         use_english_type = False
@@ -180,43 +181,43 @@ for sheetNum in range(0, 3):
             # print(word.romaji + "-" + word.kanji + "\n")
 
             currentFRmeanings = workingWorksheet.cell(row=typesIndex,
-                                                      column=Constants.TYPES_COL_MEANINGS_FR if sheetNum != sheetNum_verbs else Constants.VERBS_COL_MEANINGS_FR
+                                                      column=Globals.TYPES_COL_MEANINGS_FR if sheetNum != sheetNum_verbs else Globals.VERBS_COL_MEANINGS_FR
                                                       ).value
             if not currentFRmeanings or currentFRmeanings == "":
                 meaningIndexesFR = []
-                while wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_SOURCE).value == 'LOC':
+                while wsLocalMeaningsFR.cell(row=meaningFRindex, column=Globals.MEANINGS_COL_SOURCE).value == 'LOC':
                     meaningFRindex += 1
                 for j in range(len(word.french_meanings)):
                     fixed_meanings = word.french_meanings[j].replace('œ', 'oe')
                     fixed_meanings = re.sub(r'(\d),(\d)', r'\g<1>.\g<2>', fixed_meanings)
 
-                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_INDEX).value = meaningFRindex
-                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_MEANING).value = fixed_meanings
-                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_TYPE).value = first_meaning_type if use_english_type else ""
-                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Constants.MEANINGS_COL_SOURCE).value = "JM"
+                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Globals.MEANINGS_COL_INDEX).value = meaningFRindex
+                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Globals.MEANINGS_COL_MEANING).value = fixed_meanings
+                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Globals.MEANINGS_COL_TYPE).value = first_meaning_type if use_english_type else ""
+                    wsLocalMeaningsFR.cell(row=meaningFRindex, column=Globals.MEANINGS_COL_SOURCE).value = "JM"
                     meaningIndexesFR.append(str(meaningFRindex))
                     meaningFRindex += 1
                 workingWorksheet.cell(row=typesIndex,
-                                      column=Constants.TYPES_COL_MEANINGS_FR if sheetNum != sheetNum_verbs else Constants.VERBS_COL_MEANINGS_FR
+                                      column=Globals.TYPES_COL_MEANINGS_FR if sheetNum != sheetNum_verbs else Globals.VERBS_COL_MEANINGS_FR
                                       ).value = ";".join(meaningIndexesFR)
 
             currentESmeanings = workingWorksheet.cell(row=typesIndex,
-                                                      column=Constants.TYPES_COL_MEANINGS_ES if sheetNum < 2 else Constants.VERBS_COL_MEANINGS_ES
+                                                      column=Globals.TYPES_COL_MEANINGS_ES if sheetNum < 2 else Globals.VERBS_COL_MEANINGS_ES
                                                       ).value
             if not currentESmeanings or currentESmeanings == "":
                 meaningIndexesES = []
-                while wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_SOURCE).value == 'LOC':
+                while wsLocalMeaningsES.cell(row=meaningESindex, column=Globals.MEANINGS_COL_SOURCE).value == 'LOC':
                     meaningESindex += 1
                 for j in range(len(word.spanish_meanings)):
                     fixed_meanings = re.sub(r'(\d),(\d)', r'\g<1>.\g<2>', word.spanish_meanings[j])
-                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_INDEX).value = meaningESindex
-                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_MEANING).value = fixed_meanings
-                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_TYPE).value = first_meaning_type if use_english_type else ""
-                    wsLocalMeaningsES.cell(row=meaningESindex, column=Constants.MEANINGS_COL_SOURCE).value = "JM"
+                    wsLocalMeaningsES.cell(row=meaningESindex, column=Globals.MEANINGS_COL_INDEX).value = meaningESindex
+                    wsLocalMeaningsES.cell(row=meaningESindex, column=Globals.MEANINGS_COL_MEANING).value = fixed_meanings
+                    wsLocalMeaningsES.cell(row=meaningESindex, column=Globals.MEANINGS_COL_TYPE).value = first_meaning_type if use_english_type else ""
+                    wsLocalMeaningsES.cell(row=meaningESindex, column=Globals.MEANINGS_COL_SOURCE).value = "JM"
                     meaningIndexesES.append(str(meaningESindex))
                     meaningESindex += 1
                 workingWorksheet.cell(row=typesIndex,
-                                      column=Constants.TYPES_COL_MEANINGS_ES if sheetNum < 2 else Constants.VERBS_COL_MEANINGS_ES
+                                      column=Globals.TYPES_COL_MEANINGS_ES if sheetNum < 2 else Globals.VERBS_COL_MEANINGS_ES
                                       ).value = ";".join(meaningIndexesES)
 
         typesIndex += 1

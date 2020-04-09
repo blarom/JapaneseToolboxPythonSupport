@@ -184,9 +184,54 @@ EDICT_EXCEPTIONS = [
     ["toiu", "と言う"],
 
     ["mataha", "又は"],
-    ["konnichiha","今日は"],
-    ["konnichiwa","こんにちわ"],
-    ["konnichiwa","今日わ"],
+    ["konnichiha", "今日は"],
+    ["konnichiwa", "こんにちわ"],
+    ["konnichiwa", "今日わ"],
+    ["niyotte", "に因って"],
 
     ["soredeha", "其れでは"]
 ]
+
+LATIN_CHAR_ALPHABET = "etaoinsrhdlcumwfgpybvkjxqzéóàüíáäêèãúôçâöñßùûîõìœëïòðåæþýøžš"
+LATIN_CHAR_ALPHABET_CAP = LATIN_CHAR_ALPHABET.upper()
+NUMBER_ALPHABET = "1234567890'^"
+SYMBOLS_ALPHABET = ". ,()/1234567890'^[];…!?-+*&:%$«»¿\"？"
+WORD_LENGTH_THRESHOLD = 3
+SECTION_LENGTH_THRESHOLD = 15
+ASSETS_PATH = r'C:\Projects\Workspace\Japagram\app\src\main\assets'
+
+
+def convert_to_utf8(text):
+    return '1.' + text.encode('utf-8').hex()
+
+
+def convert_from_utf8(text):
+    return bytearray.fromhex(text[2:]).decode()
+
+
+def clearSheet(wb, sheet_name):
+    idx = wb.sheetnames.index(sheet_name)
+    ws = wb[sheet_name]
+    wb.remove(ws)
+    wb.create_sheet(sheet_name, idx)
+
+
+def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row):
+    fh = open(ASSETS_PATH + '/' + csv_name + ".csv", 'w+', encoding='utf-8')
+    content_lines = []
+    idx = 1
+    while not isLastRow(ws, idx):
+        content_lines.append("|".join([ws.cell(row=idx, column=col).value for col in range(start_col, end_col)]))
+        idx += 1
+        if only_first_row: break
+    fh.write('\n'.join(content_lines))
+    fh.close()
+
+
+def isLastRow(sheet, idx):
+    return all(not item for item in [sheet.cell(row=idx, column=col).value for col in range(1, 10)]) and all(
+        not item for item in [sheet.cell(row=idx + 1, column=col).value for col in range(1, 10)])
+
+
+def isIrrelevantRow(sheet, idx):
+    return all(not item for item in [sheet.cell(row=idx, column=col).value for col in [TYPES_COL_ROMAJI, TYPES_COL_KANJI, TYPES_COL_ALTS, TYPES_COL_COMMON, TYPES_COL_KW_JAP]])

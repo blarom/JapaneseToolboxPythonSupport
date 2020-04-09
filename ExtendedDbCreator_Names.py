@@ -6,7 +6,7 @@
 import re
 import openpyxl
 
-import Constants
+import Globals
 from Converter import Converter
 
 current_entry = ''
@@ -168,7 +168,7 @@ with open("JMneDict.xml", encoding='utf-8') as infile:
                             classifications,
                             [])  # Setting englishes to [] to reduce db size and load time, since the main need is for romaji<->kanji interpretation
 
-                if not [word.romaji, word.kanji] in Constants.EDICT_EXCEPTIONS and not ["*", word.kanji] in Constants.EDICT_EXCEPTIONS:
+                if not [word.romaji, word.kanji] in Globals.EDICT_EXCEPTIONS and not ["*", word.kanji] in Globals.EDICT_EXCEPTIONS:
                     words.append(word)
 
                 if len(words) % 500 == 0:
@@ -189,8 +189,8 @@ sheetNum_types = 0
 typesIndex = 2
 while True:
     # region Row skip conditions
-    romaji = wsLocalTypes.cell(row=typesIndex, column=Constants.TYPES_COL_ROMAJI).value
-    kanji = wsLocalTypes.cell(row=typesIndex, column=Constants.TYPES_COL_KANJI).value
+    romaji = wsLocalTypes.cell(row=typesIndex, column=Globals.TYPES_COL_ROMAJI).value
+    kanji = wsLocalTypes.cell(row=typesIndex, column=Globals.TYPES_COL_KANJI).value
 
     if (romaji == "" or not romaji or romaji is None) or (kanji == "" or not kanji or kanji is None):
         break
@@ -213,11 +213,11 @@ for word in jmDictWordsList:
 
 # region Creating the Extended Words sheet and index dicts
 print("Creating the Extended Words sheet and index dicts")
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_INDEX).value = "Index"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_ROMAJI).value = "romaji"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_KANJI).value = "kanji"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_POS).value = "classifications"
-wsExtendedWords.cell(row=1, column=Constants.EXT_WORD_COL_MEANINGS_EN).value = "englishes"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_INDEX).value = "Index"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_ROMAJI).value = "romaji"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_KANJI).value = "kanji"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_POS).value = "classifications"
+wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_MEANINGS_EN).value = "englishes"
 wsExtendedWordsCSV_rows = ['|'.join(["Index", "romaji", "kanji", "classifications"]) + '|']
 row_index = 2
 romaji_index_dict = {}
@@ -229,11 +229,11 @@ for word in newWords:
     classifications_final = '#'.join(word.classifications)
     englishes_final = '#'.join(word.englishes)
 
-    wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_INDEX).value = row_index
-    wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_ROMAJI).value = word.romaji
-    wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_KANJI).value = word.kanji
-    wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_CLASSIFICATION).value = classifications_final
-    wsExtendedWords.cell(row=row_index, column=Constants.NAMES_COL_CLASSIFICATION).value = englishes_final
+    wsExtendedWords.cell(row=row_index, column=Globals.NAMES_COL_INDEX).value = row_index
+    wsExtendedWords.cell(row=row_index, column=Globals.NAMES_COL_ROMAJI).value = word.romaji
+    wsExtendedWords.cell(row=row_index, column=Globals.NAMES_COL_KANJI).value = word.kanji
+    wsExtendedWords.cell(row=row_index, column=Globals.NAMES_COL_CLASSIFICATION).value = classifications_final
+    wsExtendedWords.cell(row=row_index, column=Globals.NAMES_COL_CLASSIFICATION).value = englishes_final
 
     wsExtendedWordsCSV_rows.append('|'.join([str(row_index), word.romaji, word.kanji, classifications_final]) + '|')
 
