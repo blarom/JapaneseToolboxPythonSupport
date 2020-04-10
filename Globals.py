@@ -205,6 +205,14 @@ SECTION_LENGTH_THRESHOLD = 15
 ASSETS_PATH = r'C:\Projects\Workspace\Japagram\app\src\main\assets'
 
 
+def remove_duplicates_keep_order(seq):
+    new_list = []
+    for item in seq:
+        if item not in new_list:
+            new_list.append(item)
+    return new_list
+
+
 def convert_to_utf8(text):
     return '1.' + text.encode('utf-8').hex()
 
@@ -214,10 +222,10 @@ def convert_from_utf8(text):
 
 
 def clearSheet(wb, sheet_name):
-    idx = wb.sheetnames.index(sheet_name)
+    index = wb.sheetnames.index(sheet_name)
     ws = wb[sheet_name]
     wb.remove(ws)
-    wb.create_sheet(sheet_name, idx)
+    wb.create_sheet(sheet_name, index)
 
 
 def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row=False, start_row=1):
@@ -229,7 +237,7 @@ def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row=F
         if line: content_lines.append(line)
         index += 1
         if only_first_row: break
-    fh.write('\n'.join(content_lines))
+    fh.write('\n'.join(content_lines) + '\n')
     fh.close()
 
 
