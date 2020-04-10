@@ -1,0 +1,527 @@
+#!/usr/bin/python -tt
+
+import re
+import openpyxl
+import Globals
+from Globals import *
+
+prepare_grammar_db = True
+prepare_kanji_db = True
+create_workbooks = False
+
+if prepare_grammar_db:
+    # region Reading worksheets
+    GrammarWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
+    print("Finished loading Grammar - 3000 kanji.xlsx")
+
+    wsMeaningsEN = GrammarWorkbook["Meanings"]
+    wsMeaningsFR = GrammarWorkbook["MeaningsFR"]
+    wsMeaningsES = GrammarWorkbook["MeaningsES"]
+    wsMultExplEN = GrammarWorkbook["MultExplEN"]
+    wsMultExplFR = GrammarWorkbook["MultExplFR"]
+    wsMultExplES = GrammarWorkbook["MultExplES"]
+    wsExamples = GrammarWorkbook["Examples"]
+    wsTypes = GrammarWorkbook["Types"]
+    wsGrammar = GrammarWorkbook["Grammar"]
+
+    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
+    print("Finished loading Verbs - 3000 kanji.xlsx")
+    wsVerbsForGrammar = VerbsWorkbook["VerbsForGrammar"]
+    wsVerbs = VerbsWorkbook["Verbs"]
+    wsLatinConj = VerbsWorkbook["LatinConj"]
+    wsKanjiConj = VerbsWorkbook["KanjiConj"]
+    wsVerbsLengths = VerbsWorkbook["VerbsLengths"]
+    wsVerbsKanjiLengths = VerbsWorkbook["VerbsKanjiLengths"]
+
+    Globals.clearSheet(GrammarWorkbook, "SortedIndexKanji")
+    Globals.clearSheet(GrammarWorkbook, "SortedIndexRomaji")
+    Globals.clearSheet(GrammarWorkbook, "SortedIndexLatinEN")
+    Globals.clearSheet(GrammarWorkbook, "SortedIndexLatinFR")
+    Globals.clearSheet(GrammarWorkbook, "SortedIndexLatinES")
+    wsSortedIndexKanji = GrammarWorkbook["SortedIndexKanji"]
+    wsSortedIndexRomaji = GrammarWorkbook["SortedIndexRomaji"]
+    wsSortedIndexLatinEN = GrammarWorkbook["SortedIndexLatinEN"]
+    wsSortedIndexLatinFR = GrammarWorkbook["SortedIndexLatinFR"]
+    wsSortedIndexLatinES = GrammarWorkbook["SortedIndexLatinES"]
+
+    # endregion
+
+    # region Settings local parameters & functions
+    wsMeaningsPerLanguage = {
+        "latinEN": wsMeaningsEN,
+        "latinFR": wsMeaningsFR,
+        "latinES": wsMeaningsES
+    }
+    wsSortedIndexPerLanguage = {
+        "kanji": wsSortedIndexKanji,
+        "romaji": wsSortedIndexRomaji,
+        "latinEN": wsSortedIndexLatinEN,
+        "latinFR": wsSortedIndexLatinFR,
+        "latinES": wsSortedIndexLatinES
+    }
+    meaningColPerLanguage = {
+        "latinEN": Globals.TYPES_COL_MEANINGS_EN,
+        "latinFR": Globals.TYPES_COL_MEANINGS_FR,
+        "latinES": Globals.TYPES_COL_MEANINGS_ES
+    }
+    kwColPerLanguage = {
+        "latinEN": Globals.TYPES_COL_KW_EN,
+        "latinFR": Globals.TYPES_COL_KW_FR,
+        "latinES": Globals.TYPES_COL_KW_ES
+    }
+    SECTIONS_DICT = {
+        "kanji": {}, "romaji": {}, "latinEN": {}, "latinFR": {}, "latinES": {}
+    }
+
+
+    def cleanKeywords(keywords, lang):
+        if lang == "latinEN":
+            keywords = re.sub(r'(i\.e\. |e\.g\. |usu. )', '', keywords)
+            keywords = re.sub(r'(\(of |\(in )', ', ', keywords)
+        elif lang == "latinFR":
+            keywords = re.sub(r'(c\.-à-d\. |ex\. |par ex\. |en part\. |norm\. |surt\. |surtout |spéc\. )', '', keywords)
+        elif lang == "latinES":
+            keywords = re.sub(r'(p\.ej\. |p \.ej\. |es decir, |en part\. |norm\. )', '', keywords)
+
+        keywords = re.sub(r'('
+                          r'esp. '
+                          r'|incl. '
+                          r'|, etc.'
+                          r'|etc.'
+                          r'|/'
+                          r'|\.\.\.'
+                          r'|…'
+                          r'|\('
+                          r'|\), '
+                          r'|\. '
+                          r'|\.'
+                          r'|\) '
+                          r'|\)'
+                          r'\n'
+                          r')', '', keywords)
+
+        keywords = keywords.replace('\u200c', '').replace('\u200b', '')  # Removes zero-length chars
+
+        return keywords
+
+
+    def isANumber(text):
+        return (text.isdigit() or text.replace("'", '').isdigit()) and not any(character in "０１２３４５６７８９" for character in text)
+
+
+    def addRunningIndexToSectionsDict(idxType, text, idx):
+        if not text: return
+        global SECTIONS_DICT
+        if text in SECTIONS_DICT[idxType].keys():
+            indexes = SECTIONS_DICT[idxType][text]
+            indexes.append(idx)
+            SECTIONS_DICT[idxType][text] = indexes
+        else:
+            SECTIONS_DICT[idxType][text] = [idx]
+
+
+    # endregion
+
+    # region Updating VerbsForGrammar sheet values according to Verbs sheet values
+    max_row = 2
+    while wsVerbsForGrammar.cell(row=max_row, column=Globals.TYPES_COL_ROMAJI).value is not None: max_row += 1
+    wsVerbsForGrammar.delete_rows(2, max_row)
+    verbsRow = 2
+    verbsForGrammarRow = 2
+    while not (wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_FAMILY).value == "-" and wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_SUMMARY_EN).value == "-"):
+        if wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KANJI).value:
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_ROMAJI).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_ROMAJI).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_KANJI).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KANJI).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_ALTS).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_ALTS).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_COMMON).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_COMMON).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_KW_JAP).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KW_JAP).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_PREP).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_PREP).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_KANJI_ROOT).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KANJI_ROOT).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_ROMAJI_ROOT).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_ROMAJI_ROOT).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_EXCEPTION_INDEX).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_EXCEPTION_INDEX).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_MEANINGS_EN).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_MEANINGS_EN).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_KW_EN).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KW_EN).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_MEANINGS_FR).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_MEANINGS_FR).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_KW_FR).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KW_FR).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_MEANINGS_ES).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_MEANINGS_ES).value
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_KW_ES).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KW_ES).value
+
+            verbsForGrammarRow += 1
+        verbsRow += 1
+        if verbsRow % 1000 == 0: print(f'Updated verbsForGrammar for {wsVerbs} - row {verbsRow}')
+    # endregion
+
+    # region Setting the running index in the types / grammar / verbs sheets
+    runningIndex = 1
+    for current_worksheet in [wsTypes, wsGrammar, wsVerbsForGrammar]:
+        rowIndex = 2
+        modulus = (4000 if current_worksheet != wsGrammar else 200)
+        while not Globals.isLastRow(current_worksheet, rowIndex):
+            if Globals.isIrrelevantRow(current_worksheet, rowIndex): continue
+            if current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ROMAJI):
+                runningIndex += 1
+                current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_INDEX).value = runningIndex
+            rowIndex += 1
+            if rowIndex % modulus == 0: print(f'Updated running index for {current_worksheet} - row {rowIndex}')
+    # endregion
+
+    # region Creating the index dicts and updating the worksheets
+    for indexType in SECTIONS_DICT.keys():
+        for current_worksheet in [wsTypes, wsGrammar, wsVerbsForGrammar]:
+            rowIndex = 2
+            modulus = (20000 if current_worksheet != wsGrammar else 200)
+            while not Globals.isLastRow(current_worksheet, rowIndex):
+                runningIndex = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_INDEX).value
+                if rowIndex % modulus == 0: print(f"Creating {indexType} Index for {current_worksheet} - row {rowIndex}")
+                if Globals.isIrrelevantRow(current_worksheet, rowIndex): continue
+                if current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ROMAJI).value:
+                    if indexType == "kanji":
+                        phrasesToIndex = []
+                        value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_KANJI).value
+                        if value != '': phrasesToIndex.append(str(value))
+                        value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_KW_JAP).value
+                        if value != '': phrasesToIndex.append(str(value))
+                        value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ALTS).value
+                        if value != '': phrasesToIndex.append(str(value))
+                    elif indexType == "romaji":
+                        phrasesToIndex = []
+                        value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ROMAJI).value
+                        if value != '': phrasesToIndex.append(str(value))
+                        value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_KW_JAP).value
+                        if value != '': phrasesToIndex.append(str(value))
+                        value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ALTS).value
+                        if value != '': phrasesToIndex.append(str(value))
+                    else:
+                        meaningsIndexes = str(current_worksheet.cell(rowIndex, meaningColPerLanguage[indexType]).value)
+                        if not meaningsIndexes or meaningsIndexes is None: continue
+                        indexes = meaningsIndexes.split(';')
+                        phrasesToIndex = [wsMeaningsPerLanguage[indexType].cell(row=int(index), column=Globals.MEANINGS_COL_MEANING).value for index in indexes if index.isdigit()]
+                        value = current_worksheet.cell(row=rowIndex, column=kwColPerLanguage[indexType]).value
+                        if value != '': phrasesToIndex.append(str(value))
+
+                    currentKeywords = ', '.join([str(item) for item in phrasesToIndex]).lower()
+                    currentKeywordsClean = cleanKeywords(currentKeywords, indexType)
+
+                    # Separating the keywords into different keyword sections to limit the length of index substrings, thereby limiting the total index size
+                    keywordSections = []
+                    cumulativeWords = []
+                    for phrase in currentKeywordsClean.split(','):
+                        words = phrase.strip().split(' ')
+                        for i in range(len(words)):
+                            if not cumulativeWords:
+                                cumulativeWords.append(words[i])
+                            else:
+                                if len(' '.join(cumulativeWords + [words[i]])) <= Globals.SECTION_LENGTH_THRESHOLD or words[i] == 'suru':
+                                    cumulativeWords.append(words[i])
+                                else:
+                                    keywordSections.append(' '.join(cumulativeWords))
+                                    cumulativeWords = []
+                        if cumulativeWords:
+                            keywordSections.append(' '.join(cumulativeWords))
+                            cumulativeWords = []
+
+                    for section in keywordSections:
+                        if not section: continue
+
+                        # Determining if the section is a pure number
+                        sectionIsANumber = isANumber(section)
+
+                        concatenatedSection = ""
+                        if indexType == 'kanji':
+                            # Leaving only relevant characters in the section
+                            for char in section:
+                                if not (char in Globals.LATIN_CHAR_ALPHABET or char in Globals.LATIN_CHAR_ALPHABET_CAP or char in Globals.SYMBOLS_ALPHABET):
+                                    concatenatedSection += char
+
+                            for i in range(len(concatenatedSection)):
+                                section_substring = concatenatedSection[i:]
+                                addRunningIndexToSectionsDict(indexType, section_substring, str(runningIndex))
+                        else:
+                            # Leaving only relevant characters in the section
+                            for char in section:
+                                if (sectionIsANumber and char in Globals.NUMBER_ALPHABET) \
+                                        or (not sectionIsANumber
+                                            and (char in Globals.LATIN_CHAR_ALPHABET
+                                                 or char in Globals.LATIN_CHAR_ALPHABET_CAP)):
+                                    concatenatedSection += char
+                            if not sectionIsANumber: concatenatedSection = re.sub(Globals.NUMBER_ALPHABET, '', concatenatedSection)  # Removing digits from non-number sections
+
+                            if len(concatenatedSection) <= 2 or sectionIsANumber:
+                                # Don't write entries that will result in a substring of only one or two characters or consisting only of digits, unless that was the original word
+                                if re.search(r'^0+$', concatenatedSection):
+                                    section_substring = "@@@@@@@@" + concatenatedSection
+                                elif sectionIsANumber:
+                                    section_substring = "@@@@@@@@" + re.sub(r'^0+', '', concatenatedSection)
+                                else:
+                                    section_substring = concatenatedSection
+                                addRunningIndexToSectionsDict(indexType, section_substring, str(runningIndex))
+                            else:
+                                # Creating the word fragments in the index
+                                for i in range(len(concatenatedSection) - 2):
+                                    section_substring = concatenatedSection[i:]
+                                    if re.search(r'^0+$', concatenatedSection):
+                                        section_substring = "@@@@@@@@" + concatenatedSection
+                                    elif isANumber(section_substring):
+                                        section_substring = "@@@@@@@@" + re.sub(r'^0+', '', section_substring)
+                                    addRunningIndexToSectionsDict(indexType, section_substring, str(runningIndex))
+                rowIndex += 1
+
+        sortedSectionSubstrings = sorted(SECTIONS_DICT[indexType].keys(), key=lambda x: Globals.convert_to_utf8(x))
+        print(str(sortedSectionSubstrings[:10]))
+        print(f'Number of sortedSectionSubstrings: {len(sortedSectionSubstrings)}')
+        if indexType == 'kanji':
+            for i in range(len(sortedSectionSubstrings)):
+                if i % 20000 == 0: print(f'Updated {indexType} sorted index - item {i}/{len(sortedSectionSubstrings)}')
+                wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=1).value = sortedSectionSubstrings[i]
+                wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=2).value = ';'.join(sorted(list(set(SECTIONS_DICT[indexType][sortedSectionSubstrings[i]]))))
+                wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=3).value = Globals.convert_to_utf8(sortedSectionSubstrings[i]).upper()
+        else:
+            for i in range(len(sortedSectionSubstrings)):
+                if i % 10000 == 0: print(f'Updated {indexType} sorted index - item {i}/{len(sortedSectionSubstrings)}')
+                wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=1).value = sortedSectionSubstrings[i].replace("@@@@@@@@", '')
+                wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=2).value = ';'.join(sorted(list(set(SECTIONS_DICT[indexType][sortedSectionSubstrings[i]]))))
+    # endregion
+
+    # region Saving the results to xlsx & csv
+    if create_workbooks:
+        GrammarWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - ready for Japagram.xlsx')
+        VerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx')
+
+    Globals.create_csv_from_worksheet(wsSortedIndexKanji, name("GrammarSortedIndexKanji"), idx("A"), idx("C"))
+    Globals.create_csv_from_worksheet(wsSortedIndexRomaji, name("GrammarSortedIndexRomaji"), idx("A"), idx("B"))
+    Globals.create_csv_from_worksheet(wsSortedIndexLatinEN, name("GrammarSortedIndexLatinEN"), idx("A"), idx("B"))
+    Globals.create_csv_from_worksheet(wsSortedIndexLatinFR, name("GrammarSortedIndexLatinFR"), idx("A"), idx("B"))
+    Globals.create_csv_from_worksheet(wsSortedIndexLatinES, name("GrammarSortedIndexLatinES"), idx("A"), idx("B"))
+    Globals.create_csv_from_worksheet(wsMeaningsEN, name("Meanings"), idx("A"), idx("H"))
+    Globals.create_csv_from_worksheet(wsMeaningsFR, name("MeaningsFR"), idx("A"), idx("H"))
+    Globals.create_csv_from_worksheet(wsMeaningsES, name("MeaningsES"), idx("A"), idx("H"))
+    Globals.create_csv_from_worksheet(wsTypes, name("Types"), idx("A"), idx("P"))
+    Globals.create_csv_from_worksheet(wsGrammar, name("Grammar"), idx("A"), idx("P"))
+    Globals.create_csv_from_worksheet(wsMultExplEN, name("MultExplEN"), idx("A"), idx("D"))
+    Globals.create_csv_from_worksheet(wsMultExplFR, name("MultExplFR"), idx("A"), idx("D"))
+    Globals.create_csv_from_worksheet(wsMultExplES, name("MultExplES"), idx("A"), idx("D"))
+    Globals.create_csv_from_worksheet(wsExamples, name("Examples"), idx("A"), idx("F"))
+    Globals.create_csv_from_worksheet(wsVerbsForGrammar, name("VerbsForGrammar"), idx("A"), idx("P"))
+    Globals.create_csv_from_worksheet(wsLatinConj, name("LatinConj"), idx("A"), idx("GA"))
+    Globals.create_csv_from_worksheet(wsKanjiConj, name("KanjiConj"), idx("A"), idx("GA"))
+    Globals.create_csv_from_worksheet(wsVerbsLengths, name("VerbsLengths"), idx("A"), idx("GA"), True)
+    Globals.create_csv_from_worksheet(wsVerbsKanjiLengths, name("VerbsKanjiLengths"), idx("A"), idx("GA"), True)
+    # endregion
+
+if prepare_kanji_db:
+    # region Reading worksheets
+    RootsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Roots - 3000 kanji.xlsx', data_only=True)
+    print("Finished loading Roots - 3000 kanji.xlsx")
+    Globals.clearSheet(RootsWorkbook, "Components")
+    wsRadicals = RootsWorkbook["Radicals"]
+    wsRadicalsOnly = RootsWorkbook["RadicalsOnly"]
+    wsKanjiDict = RootsWorkbook["Kanji_Dict"]
+    wsCJK_Decomposition = RootsWorkbook["CJK_Decomposition"]
+    wsSimilars = RootsWorkbook["Similars"]
+    wsComponents = RootsWorkbook["Components"]
+    # endregion
+
+    # region Creating the sorted decompositions dictionary
+    decompositions = {}
+    radicals = []
+    radicals_not_to_decompose = []
+    for radical_index in range(1, 361):  # 360 = First index of katakana in RadicalsOnly sheet
+        radicals.append(str(wsRadicalsOnly.cell(row=radical_index, column=1).value))
+    for radical_index in range(1, 552):  # 551 = Last index of RadicalsOnly sheet
+        if not (radical_index == 96 or radical_index == 124 or radical_index == 152 or radical_index == 154 or radical_index == 172 or radical_index == 177 or radical_index == 190
+                or radical_index == 191 or radical_index == 194 or radical_index == 195 or radical_index == 203 or radical_index == 204 or radical_index == 205 or radical_index == 207
+                or radical_index == 208 or radical_index == 214 or radical_index == 218 or radical_index == 222 or radical_index == 223 or radical_index == 226 or radical_index == 227
+                or radical_index == 229 or radical_index == 233 or radical_index == 236 or radical_index == 237 or radical_index == 240 or radical_index == 244 or radical_index == 250
+                or radical_index == 251 or radical_index == 256 or radical_index == 257 or radical_index == 258 or radical_index == 259 or radical_index == 264 or radical_index == 265
+                or radical_index == 266 or radical_index == 270 or radical_index == 286 or radical_index == 298 or radical_index == 301 or radical_index == 303 or radical_index == 310
+                or radical_index == 311 or radical_index == 312 or radical_index == 315 or radical_index == 316 or radical_index == 317 or radical_index == 320 or radical_index == 321
+                or radical_index == 323 or radical_index == 324
+                or (329 <= radical_index <= 338)
+                or radical_index == 342 or radical_index == 343
+                or (346 <= radical_index <= 358 and radical_index != 355)):
+            radicals_not_to_decompose.append(str(wsRadicalsOnly.cell(row=radical_index, column=1).value))
+    VALUE = 0
+    UTF8_VALUE = 1
+    STRUCTURE = 2
+    DECOMPOSITION = 3
+    FULL_DECOMPOSITION = 4
+    row = 3
+    while not Globals.isLastRow(wsCJK_Decomposition, row):
+        value = str(wsCJK_Decomposition.cell(row=row, column=1).value)
+        key = [
+            value,
+            str(Globals.convert_to_utf8(str(wsCJK_Decomposition.cell(row=row, column=1).value))),
+            str(wsCJK_Decomposition.cell(row=row, column=3).value) if wsCJK_Decomposition.cell(row=row, column=4).value else "",
+            str(wsCJK_Decomposition.cell(row=row, column=4).value) if wsCJK_Decomposition.cell(row=row, column=4).value else "",
+            ""
+        ]
+        decompositions[value] = key
+        row += 1
+
+
+    def Recursive_Decomposition(line_key):
+        if line_key not in decompositions or not decompositions[line_key][DECOMPOSITION]: return []
+        line_decompositions = decompositions[line_key][DECOMPOSITION].split(";")
+        current_full_decomposition = []
+        for element in line_decompositions:
+            if not element: continue
+            if element.isdigit():
+                current_full_decomposition += Recursive_Decomposition(element)
+            else:
+                current_full_decomposition.append(element)
+                if element not in radicals_not_to_decompose:
+                    current_full_decomposition += Recursive_Decomposition(element)
+        return current_full_decomposition
+
+
+    for key in decompositions.keys():
+        full_decomposition = Recursive_Decomposition(key)
+        final_current_value_list = remove_duplicates_keep_order(full_decomposition)
+        decompositions[key][FULL_DECOMPOSITION] = "".join(final_current_value_list)
+
+    print('\n'.join([str(decompositions[item]) for item in list(decompositions.keys())[:20]]))
+
+    # endregion
+
+    # region Updating the CJK_Decompositons, KanjiDict and Radicals sheets
+    row = 3
+    sorted_keys = sorted(decompositions.keys(), key=lambda x: decompositions[x][UTF8_VALUE])
+    for i in range(len(sorted_keys)):
+        wsCJK_Decomposition.cell(row=i + 3, column=1).value = decompositions[sorted_keys[i]][VALUE]
+        wsCJK_Decomposition.cell(row=i + 3, column=2).value = decompositions[sorted_keys[i]][UTF8_VALUE]
+        wsCJK_Decomposition.cell(row=i + 3, column=3).value = decompositions[sorted_keys[i]][STRUCTURE]
+        wsCJK_Decomposition.cell(row=i + 3, column=4).value = decompositions[sorted_keys[i]][DECOMPOSITION]
+        wsCJK_Decomposition.cell(row=i + 3, column=5).value = decompositions[sorted_keys[i]][FULL_DECOMPOSITION]
+
+    row = 2
+    radicals = []
+    while not Globals.isLastRow(wsRadicals, row):
+        item = [
+            str(wsRadicals.cell(row=row, column=1).value) if wsRadicals.cell(row=row, column=1).value is not None else "",
+            str(Globals.convert_to_utf8(str(wsRadicals.cell(row=row, column=1).value))).upper(),
+            str(wsRadicals.cell(row=row, column=3).value) if wsRadicals.cell(row=row, column=3).value is not None else ""
+        ]
+        radicals.append(item)
+        row += 1
+    sorted_radicals = sorted(radicals, key=lambda x: x[1])
+    for i in range(len(sorted_radicals)):
+        wsRadicals.cell(row=i + 2, column=1).value = sorted_radicals[i][0]
+        wsRadicals.cell(row=i + 2, column=2).value = sorted_radicals[i][1]
+        wsRadicals.cell(row=i + 2, column=3).value = sorted_radicals[i][2]
+
+    row = 2
+    kanji_dict_items = []
+    while not Globals.isLastRow(wsKanjiDict, row):
+        item = [
+            str(wsKanjiDict.cell(row=row, column=1).value),
+            str(Globals.convert_to_utf8(str(wsKanjiDict.cell(row=row, column=1).value))).upper(),
+            str(wsKanjiDict.cell(row=row, column=3).value) if wsKanjiDict.cell(row=row, column=3).value is not None else "",
+            str(wsKanjiDict.cell(row=row, column=4).value) if wsKanjiDict.cell(row=row, column=4).value is not None else "",
+            str(wsKanjiDict.cell(row=row, column=5).value) if wsKanjiDict.cell(row=row, column=5).value is not None else "",
+            str(wsKanjiDict.cell(row=row, column=6).value) if wsKanjiDict.cell(row=row, column=6).value is not None else ""
+        ]
+        kanji_dict_items.append(item)
+        row += 1
+    sorted_kanji_dict_items = sorted(kanji_dict_items, key=lambda x: x[1])
+    for i in range(len(sorted_kanji_dict_items)):
+        wsKanjiDict.cell(row=i + 2, column=1).value = sorted_kanji_dict_items[i][0]
+        wsKanjiDict.cell(row=i + 2, column=2).value = sorted_kanji_dict_items[i][1]
+        wsKanjiDict.cell(row=i + 2, column=3).value = sorted_kanji_dict_items[i][2]
+        wsKanjiDict.cell(row=i + 2, column=4).value = sorted_kanji_dict_items[i][3]
+        wsKanjiDict.cell(row=i + 2, column=5).value = sorted_kanji_dict_items[i][4]
+        wsKanjiDict.cell(row=i + 2, column=6).value = sorted_kanji_dict_items[i][5]
+        row += 1
+    # endregion
+
+    # region Classify the components
+    struct_map = {
+        "a2": "across2",
+        "a2m": "across2",
+        "a2t": "across2",
+        "a3": "across3",
+        "a4": "across4",
+        "d2": "down2",
+        "d2m": "down2",
+        "d2t": "down2",
+        "d3": "down3",
+        "d4": "down4",
+        "r3tr": "repeat3special",
+        "r3gw": "repeat3special",
+        "r3st": "repeat3special",
+        "r3stl": "repeat3special",
+        "r3str": "repeat3special",
+        "r4sq": "repeat4special",
+        "4sq": "foursquare",
+        "r5": "repeat5special",
+        "stl": "topleftout",
+        "st": "topout",
+        "str": "toprightout",
+        "sl": "leftout",
+        "s": "fullout",
+        "sbl": "bottomleftout",
+        "sb": "bottomout",
+        "sbr": "bottomrightout",
+    }
+    compts_by_struct = {
+        "full": {},
+        "across2": {},
+        "across3": {},
+        "across4": {},
+        "down2": {},
+        "down3": {},
+        "down4": {},
+        "repeat3special": {},
+        "repeat4special": {},
+        "foursquare": {},
+        "repeat5special": {},
+        "topleftout": {},
+        "topout": {},
+        "toprightout": {},
+        "leftout": {},
+        "fullout": {},
+        "bottomleftout": {},
+        "bottomout": {},
+        "bottomrightout": {},
+    }
+    for key in decompositions.keys():
+        if key.isdigit(): continue
+        for element in list(decompositions[key][FULL_DECOMPOSITION]):
+            compts_by_struct["full"][element] = (compts_by_struct["full"][element] + key) if element in compts_by_struct["full"].keys() else key
+
+        if decompositions[key][STRUCTURE] not in struct_map: continue
+        struct = struct_map[decompositions[key][STRUCTURE]]
+        elements = decompositions[key][DECOMPOSITION].split(";")
+        if struct[-3:] == 'out':
+            element = elements[0]
+            compts_by_struct[struct][element] = (compts_by_struct[struct][element] + key) if element in compts_by_struct[struct].keys() else key
+        else:
+            for element in elements:
+                if element.isdigit(): continue
+                compts_by_struct[struct][element] = (compts_by_struct[struct][element] + key) if element in compts_by_struct[struct].keys() else key
+    # endregion
+
+    # region Update the Components sheet
+    row = 1
+    for structure in compts_by_struct.keys():
+        if structure != "full":
+            wsComponents.cell(row=row, column=1).value = structure
+            row += 1
+        ordered_elements = sorted(compts_by_struct[structure].keys(), key=lambda x: convert_to_utf8(x))
+        for element in ordered_elements:
+            wsComponents.cell(row=row, column=1).value = element
+            wsComponents.cell(row=row, column=2).value = compts_by_struct[structure][element]
+            row += 1
+    # print('\n'.join([key + " : " + str(compts_by_struct["full"][key]) for key in list(compts_by_struct["full"].keys())[:20]]))
+    # endregion
+
+    # region Saving the results to xlsx & csv
+    if create_workbooks:
+        RootsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Roots - 3000 kanji - ready for Japagram.xlsx')
+
+    Globals.create_csv_from_worksheet(wsRadicals, name("Radicals"), idx("B"), idx("C"), False, 2)
+    Globals.create_csv_from_worksheet(wsKanjiDict, name("KanjiDictionary"), idx("B"), idx("F"), False, 2)
+    Globals.create_csv_from_worksheet(wsCJK_Decomposition, name("CJK_Decomposition"), idx("B"), idx("D"), False, 2)
+    Globals.create_csv_from_worksheet(wsRadicalsOnly, name("RadicalsOnly"), idx("A"), idx("G"), False, 2)
+    Globals.create_csv_from_worksheet(wsSimilars, name("Similars"), idx("A"), idx("E"), False, 2)
+    Globals.create_csv_from_worksheet(wsComponents, name("Components"), idx("A"), idx("B"), False, 1)
+    # endregion
