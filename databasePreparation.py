@@ -3,11 +3,26 @@
 import re
 import openpyxl
 import Globals
+import ExtendedDbCreator
+import JMDictForeignMeaningsUpdater
 from Globals import *
 
-prepare_grammar_db = True
-prepare_kanji_db = True
-create_workbooks = False
+prepare_grammar_db = False
+prepare_extended_db = False
+prepare_foreign_meanings = False
+prepare_kanji_db = False
+prepare_frequency_db = True
+create_workbooks = True
+
+prepare_db_for_release = False
+if prepare_db_for_release:
+    prepare_grammar_db = True
+    prepare_extended_db = True
+    prepare_foreign_meanings = True
+    prepare_kanji_db = True
+    prepare_frequency_db = True
+    create_workbooks = True
+
 
 if prepare_grammar_db:
     # region Reading worksheets
@@ -308,6 +323,12 @@ if prepare_grammar_db:
     Globals.create_csv_from_worksheet(wsVerbsKanjiLengths, name("VerbsKanjiLengths"), idx("A"), idx("GA"), True)
     # endregion
 
+if prepare_extended_db:
+    ExtendedDbCreator.main()
+
+if prepare_foreign_meanings:
+    JMDictForeignMeaningsUpdater.main()
+
 if prepare_kanji_db:
     # region Reading worksheets
     RootsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Roots - 3000 kanji.xlsx', data_only=True)
@@ -524,4 +545,79 @@ if prepare_kanji_db:
     Globals.create_csv_from_worksheet(wsRadicalsOnly, name("RadicalsOnly"), idx("A"), idx("G"), False, 2)
     Globals.create_csv_from_worksheet(wsSimilars, name("Similars"), idx("A"), idx("E"), False, 2)
     Globals.create_csv_from_worksheet(wsComponents, name("Components"), idx("A"), idx("B"), False, 1)
+    # endregion
+
+if prepare_frequency_db:
+    # region Reading worksheets
+    GrammarWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
+    print("Finished loading Grammar - 3000 kanji.xlsx")
+    wsMeaningsEN = GrammarWorkbook["Meanings"]
+    wsTypes = GrammarWorkbook["Types"]
+    wsGrammar = GrammarWorkbook["Grammar"]
+
+    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
+    print("Finished loading Verbs - 3000 kanji.xlsx")
+    wsVerbsForGrammar = VerbsWorkbook["VerbsForGrammar"]
+
+    ExtendedWordsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Extended Words - 3000 kanji.xlsx', data_only=True)
+    print("Finished loading Verbs - 3000 kanji.xlsx")
+    wsExtendedWords = ExtendedWordsWorkbook["Words"]
+
+    FrequencyWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Frequencies.xlsx', data_only=True)
+    print("Finished loading Frequencies.xlsx")
+    wsFrequencyWords = FrequencyWorkbook["Words"]
+    # endregion
+
+    # region Creating the words dictionary
+    words = {}
+    for ws in [wsGrammar, wsTypes, wsVerbsForGrammar]:
+        row = 2
+        while not Globals.isLastRow(ws, row):
+            kanji = str(ws.cell(row=row, column=Globals.TYPES_COL_KANJI).value)
+            romaji = str(ws.cell(row=row, column=Globals.TYPES_COL_ROMAJI).value)
+            meaning_indexes = str(ws.cell(row=row, column=Globals.TYPES_COL_MEANINGS_EN).value).split(";")
+
+            if not romaji: continue
+            small_meanings = []
+            for index in meaning_indexes:
+                value = wsMeaningsEN.cell(row=int(index), column=Globals.TYPES_COL_ROMAJI).value
+                if value:
+                    small_meaning = value.split(",")[0].split("(")[0]
+                    if small_meaning: small_meanings.append(small_meaning)
+
+            if kanji in words.keys():
+                words[kanji] = [words[kanji][0] + '#' + romaji, words[kanji][1] + '#' + ', '.join(small_meanings)]
+            else:
+                words[kanji] = [romaji, ', '.join(small_meanings)]
+            row += 1
+
+    row = 2
+    while not Globals.isLastRow(wsExtendedWords, row):
+        kanji = str(wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_KANJI).value)
+        romaji = str(wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_ROMAJI).value)
+        meaning = wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_MEANINGS_EN.value).split("(")[0]
+
+        if not romaji: continue
+        if kanji in words.keys():
+            words[kanji] = [words[kanji][0] + '#' + romaji, words[kanji][1] + '#' + meaning]
+        else:
+            words[kanji] = [romaji, meaning]
+        row += 1
+    # endregion
+
+    # region Updating the Frequencies sheet with meanings
+    row = 2
+    while not Globals.isLastRow(wsFrequencyWords, row):
+        kanji = wsFrequencyWords.cell(row=row, column=2).value
+        if kanji and kanji in words.keys():
+            wsFrequencyWords.cell(row=row, column=3).value = words[kanji][0]
+            wsFrequencyWords.cell(row=row, column=4).value = words[kanji][1]
+        row += 1
+    # endregion
+
+    # region Saving the results to xlsx & csv
+    if create_workbooks:
+        FrequencyWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Frequencies.xlsx')
+
+    Globals.create_csv_from_worksheet(wsFrequencyWords, name("Frequencies"), idx("A"), idx("D"), False, 2)
     # endregion
