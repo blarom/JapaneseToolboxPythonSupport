@@ -205,6 +205,14 @@ SECTION_LENGTH_THRESHOLD = 15
 ASSETS_PATH = r'C:\Projects\Workspace\Japagram\app\src\main\assets'
 
 
+
+def is_latin(text):
+    for char in list(text):
+        if char in LATIN_CHAR_ALPHABET or char in LATIN_CHAR_ALPHABET_CAP:
+            return True
+
+
+
 def remove_duplicates_keep_order(seq):
     new_list = []
     for item in seq:
@@ -251,9 +259,31 @@ def isIrrelevantRow(sheet, index):
 
 
 def name(text):
-    return f"Line{text} - 3000 kanji - test"
+    return f"Line{text} - 3000 kanji"
 
 
 def idx(text):
     return column_index_from_string(text)
 
+
+def get_root_from_masu_stem_latin(latinStem, family):
+    if ' godan' in family:
+        stem = family.split(' ')[0]
+        return latinStem[:-len(stem)]
+    elif family == 'iku special class' or family == 'yuku special class' or family == 'aru special class' or family == 'ru ichidan':
+        return latinStem[:-2]
+    elif family == 'u special class':
+        return latinStem[:-1]
+    elif ' verb' in family:
+        return latinStem[:-4]
+    else:
+        return latinStem
+
+
+def get_root_from_masu_stem_kanji(kanjiStem, family):
+    if ' godan' in family or 'special class' in family or family == 'ru ichidan':
+        return kanjiStem[:-1]
+    elif ' verb' in family:
+        return kanjiStem[:-2]
+    else:
+        return kanjiStem

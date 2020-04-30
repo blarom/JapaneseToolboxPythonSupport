@@ -7,22 +7,25 @@ import ExtendedDbCreator
 import JMDictForeignMeaningsUpdater
 from Globals import *
 
-prepare_grammar_db = False
-prepare_extended_db = False
-prepare_foreign_meanings = False
+prepare_foreign_meanings = True
+prepare_grammar_db = True
+prepare_extended_db = True
 prepare_kanji_db = False
-prepare_frequency_db = True
+prepare_conj_db = False
+prepare_frequency_db = False
 create_workbooks = True
 
 prepare_db_for_release = False
 if prepare_db_for_release:
+    prepare_foreign_meanings = True
     prepare_grammar_db = True
     prepare_extended_db = True
-    prepare_foreign_meanings = True
     prepare_kanji_db = True
     prepare_frequency_db = True
     create_workbooks = True
 
+if prepare_foreign_meanings:
+    JMDictForeignMeaningsUpdater.main()
 
 if prepare_grammar_db:
     # region Reading worksheets
@@ -326,9 +329,6 @@ if prepare_grammar_db:
 if prepare_extended_db:
     ExtendedDbCreator.main()
 
-if prepare_foreign_meanings:
-    JMDictForeignMeaningsUpdater.main()
-
 if prepare_kanji_db:
     # region Reading worksheets
     RootsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Roots - 3000 kanji.xlsx', data_only=True)
@@ -547,6 +547,103 @@ if prepare_kanji_db:
     Globals.create_csv_from_worksheet(wsComponents, name("Components"), idx("A"), idx("B"), False, 1)
     # endregion
 
+if prepare_conj_db:
+    # region Reading worksheets
+    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
+    print("Finished loading Verbs - 3000 kanji.xlsx")
+    wsVerbsForGrammar = VerbsWorkbook["VerbsForGrammar"]
+    wsVerbs = VerbsWorkbook["Verbs"]
+    wsLatinConj = VerbsWorkbook["LatinConj"]
+    wsKanjiConj = VerbsWorkbook["KanjiConj"]
+    wsLatinConjIndex = VerbsWorkbook["LatinConjIndex"]
+    wsKanjiConjIndex = VerbsWorkbook["KanjiConjIndex"]
+    # endregion
+
+    # region Getting the family conjugations
+    conjugations_latin_per_family = {}
+    conjugations_kanji_per_family = {}
+    last_col = 1
+    while wsLatinConj.cell(row=3, column=last_col).value:
+        last_col += 1
+
+    row = 2
+    while not Globals.isLastRow(wsLatinConj, row):
+        family = wsLatinConj.cell(row=row, column=idx("A")).value
+        if not family:
+            row += 1
+            continue
+        match = re.search(r'(.*(godan|special class|ichidan|suru|kuru|desu).*)', wsLatinConj.cell(row=row, column=idx("A")).value)
+        if match and not wsLatinConj.cell(row=row, column=idx("H")).value:
+            conjugations_latin_per_family[match.group(0)] = [wsLatinConj.cell(row=row, column=i).value if wsLatinConj.cell(row=row, column=i).value else "" for i in range(1, last_col + 1)]
+            conjugations_kanji_per_family[match.group(0)] = [wsKanjiConj.cell(row=row, column=i).value if wsKanjiConj.cell(row=row, column=i).value else "" for i in range(1, last_col + 1)]
+        row += 1
+    # endregion
+
+    # region Creating the conjugation dicts and index
+    latinConjIndex = {}
+    kanjiConjIndex = {}
+    row = 2
+    while not Globals.isLastRow(wsVerbsForGrammar, row):
+        conjIndex = int(wsVerbsForGrammar.cell(row=row, column=Globals.TYPES_COL_EXCEPTION_INDEX).value) + 1
+        verbIndex = str(wsVerbsForGrammar.cell(row=row, column=Globals.TYPES_COL_INDEX).value)
+        conj_family = wsLatinConj.cell(row=conjIndex, column=idx("A")).value
+        is_family_conj = not wsLatinConj.cell(row=conjIndex, column=idx("B")).value
+        alt_spellings = wsVerbsForGrammar.cell(row=row, column=Globals.TYPES_COL_ALTS).value
+        alt_spellings = alt_spellings.replace(' ', '') if alt_spellings else ""
+        root = wsVerbsForGrammar.cell(row=row, column=Globals.TYPES_COL_ROMAJI_ROOT).value
+        latinRoots = [root if root else ""]
+        root = wsVerbsForGrammar.cell(row=row, column=Globals.TYPES_COL_KANJI_ROOT).value
+        kanjiRoots = [root if root else ""]
+        for item in alt_spellings.split(','):
+            if not item: continue
+            if Globals.is_latin(item):
+                latinRoots.append(Globals.get_root_from_masu_stem_latin(item, conj_family))
+            else:
+                kanjiRoots.append(Globals.get_root_from_masu_stem_kanji(item, conj_family))
+
+        for latinRoot in latinRoots:
+            current_verb_conjugations_latin = [latinRoot + termination for termination in conjugations_latin_per_family[conj_family][10:]]
+            if not is_family_conj:
+                for col in range(0, last_col-10):
+                    current_verb_conjugations_latin[col] = wsLatinConj.cell(row=conjIndex, column=col+10).value
+            for item in current_verb_conjugations_latin:
+                if item:
+                    latinConjIndex[item] = [verbIndex] if item not in latinConjIndex.keys() else latinConjIndex[item] + [verbIndex]
+                    latinConjIndex[item] = list(set(latinConjIndex[item]))
+
+        for kanjiRoot in kanjiRoots:
+            current_verb_conjugations_kanji = [kanjiRoot + termination for termination in conjugations_kanji_per_family[conj_family][10:]]
+            if not is_family_conj:
+                for col in range(0, last_col-10):
+                    current_verb_conjugations_kanji[col] = wsKanjiConj.cell(row=conjIndex, column=col+10).value
+            for item in current_verb_conjugations_kanji:
+                if item and item != '*':
+                    kanjiConjIndex[item] = [verbIndex] if item not in kanjiConjIndex.keys() else kanjiConjIndex[item] + [verbIndex]
+                    kanjiConjIndex[item] = list(set(kanjiConjIndex[item]))
+
+        if row % 100 == 0: print(f"VerbsForGrammar - finished row {row}")
+        row += 1
+    # endregion
+
+    # region Writing to the worksheets
+    sorted_keys = sorted(latinConjIndex.keys())
+    for i in range(0, len(sorted_keys)):
+        wsLatinConjIndex.cell(row=i + 1, column=1).value = sorted_keys[i]
+        wsLatinConjIndex.cell(row=i + 1, column=2).value = ';'.join(latinConjIndex[sorted_keys[i]])
+    sorted_keys = sorted(kanjiConjIndex.keys())
+    for i in range(0, len(sorted_keys)):
+        wsKanjiConjIndex.cell(row=i + 1, column=1).value = sorted_keys[i]
+        wsKanjiConjIndex.cell(row=i + 1, column=2).value = ';'.join(kanjiConjIndex[sorted_keys[i]])
+    # endregion
+
+    # region Saving the results to xlsx & csv
+    if create_workbooks:
+        VerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx')
+
+    Globals.create_csv_from_worksheet(wsLatinConjIndex, name("VerbConjLatinSortedIndex"), idx("A"), idx("B"))
+    Globals.create_csv_from_worksheet(wsKanjiConjIndex, name("VerbConjKanjiSortedIndex"), idx("A"), idx("B"))
+    # endregion
+
 if prepare_frequency_db:
     # region Reading worksheets
     GrammarWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
@@ -570,12 +667,20 @@ if prepare_frequency_db:
 
     # region Creating the words dictionary
     words = {}
+
+
+    def get_small_joined_list(small_meanings_list):
+        return ', '.join(remove_duplicates_keep_order([item.strip() for item in ','.join(small_meanings_list).split(',')]))
+
+
     for ws in [wsGrammar, wsTypes, wsVerbsForGrammar]:
         row = 2
         while not Globals.isLastRow(ws, row):
             kanji = str(ws.cell(row=row, column=Globals.TYPES_COL_KANJI).value)
+            alts = str(ws.cell(row=row, column=Globals.TYPES_COL_ALTS).value)
             romaji = str(ws.cell(row=row, column=Globals.TYPES_COL_ROMAJI).value)
-            meaning_indexes = str(ws.cell(row=row, column=Globals.TYPES_COL_MEANINGS_EN).value).split(";")
+            val = ws.cell(row=row, column=Globals.TYPES_COL_MEANINGS_EN).value
+            meaning_indexes = str(val if val else "").split(";")
 
             if not romaji: continue
             small_meanings = []
@@ -586,22 +691,46 @@ if prepare_frequency_db:
                     if small_meaning: small_meanings.append(small_meaning)
 
             if kanji in words.keys():
-                words[kanji] = [words[kanji][0] + '#' + romaji, words[kanji][1] + '#' + ', '.join(small_meanings)]
+                words[kanji] = [words[kanji][0] + '#' + romaji,
+                                words[kanji][1] + '#' + get_small_joined_list(small_meanings)
+                                ]
             else:
-                words[kanji] = [romaji, ', '.join(small_meanings)]
+                words[kanji] = [romaji, get_small_joined_list(small_meanings)]
+
+            for alt_spelling in alts.split(";"):
+                if is_latin(alt_spelling): continue
+                if alt_spelling in words.keys():
+                    words[alt_spelling] = [words[alt_spelling][0] + '#' + romaji,
+                                           words[alt_spelling][1] + '#' + get_small_joined_list(small_meanings)
+                                           ]
+                else:
+                    words[alt_spelling] = [romaji, get_small_joined_list(small_meanings)]
             row += 1
 
     row = 2
     while not Globals.isLastRow(wsExtendedWords, row):
         kanji = str(wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_KANJI).value)
+        alts = str(wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_ALTS).value)
         romaji = str(wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_ROMAJI).value)
-        meaning = wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_MEANINGS_EN.value).split("(")[0]
+        val = wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_MEANINGS_EN).value
+        meaning = str(val if val else "").split("(")[0]
 
         if not romaji: continue
         if kanji in words.keys():
-            words[kanji] = [words[kanji][0] + '#' + romaji, words[kanji][1] + '#' + meaning]
+            words[kanji] = [words[kanji][0] + '#' + romaji,
+                            words[kanji][1] + '#' + meaning]
         else:
             words[kanji] = [romaji, meaning]
+
+        for alt_spelling in alts.split("#"):
+            if is_latin(alt_spelling): continue
+            alt_spelling = alt_spelling.strip()
+            if alt_spelling in words.keys():
+                words[alt_spelling] = [words[alt_spelling][0] + '#' + romaji,
+                                       words[alt_spelling][1] + '#' + meaning
+                                       ]
+            else:
+                words[alt_spelling] = [romaji, meaning]
         row += 1
     # endregion
 
