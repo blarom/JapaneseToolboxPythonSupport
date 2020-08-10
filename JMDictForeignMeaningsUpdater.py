@@ -11,9 +11,9 @@ def main():
 
     # region Preparations
     localWordsWorkbook = openpyxl.load_workbook(
-        filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - before foreign.xlsx', data_only=True)
+        filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - MASTER.xlsx', data_only=True)
     localVerbsWorkbook = openpyxl.load_workbook(
-        filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - before foreign.xlsx', data_only=True)
+        filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - MASTER.xlsx', data_only=True)
     wsLocalMeanings = localWordsWorkbook["Meanings"]
     wsLocalMeaningsFR = localWordsWorkbook["MeaningsFR"]
     wsLocalMeaningsES = localWordsWorkbook["MeaningsES"]
@@ -158,7 +158,6 @@ def main():
             meaningsEN = workingWorksheet.cell(row=typesIndex,
                                                column=Globals.TYPES_COL_MEANINGS_EN if sheetNum != sheetNum_verbs else Globals.VERBS_COL_MEANINGS_EN
                                                ).value
-
             meaning_types = [wsLocalMeanings.cell(row=int(meaning_index), column=Globals.MEANINGS_COL_TYPE).value for meaning_index in str(meaningsEN).split(";")]
 
             first_meaning_type = meaning_types[0]
@@ -237,5 +236,5 @@ def main():
     # endregion
 
     # Saving the results
-    localWordsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx')
-    localVerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx')
+    localWordsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - with foreign.xlsx')
+    localVerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - with foreign.xlsx')

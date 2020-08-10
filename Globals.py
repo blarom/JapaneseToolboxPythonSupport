@@ -48,6 +48,17 @@ VERBS_COL_KW_FR = 16
 VERBS_COL_MEANINGS_ES = 17
 VERBS_COL_KW_ES = 18
 
+VERBS_COL_CONJ_FAMILY = 1
+VERBS_COL_CONJ_SUMMARY_EN = 2
+VERBS_COL_CONJ_TI = 3
+VERBS_COL_CONJ_PREP = 4
+VERBS_COL_CONJ_KANA = 5
+VERBS_COL_CONJ_KANJI = 6
+VERBS_COL_CONJ_ROMAJI = 7
+VERBS_COL_CONJ_KANJI_ROOT = 8
+VERBS_COL_CONJ_ROMAJI_ROOT = 9
+VERBS_COL_CONJ_FIRST_CONJ = 10
+
 EXT_WORD_COL_INDEX = 1
 EXT_WORD_COL_ROMAJI = 2
 EXT_WORD_COL_KANJI = 3
@@ -196,7 +207,7 @@ EDICT_EXCEPTIONS = [
     ["soredeha", "其れでは"]
 ]
 
-LATIN_CHAR_ALPHABET = "etaoinsrhdlcumwfgpybvkjxqzéóàüíáäêèãúôçâöñßùûîõìœëïòðåæþýøžš"
+LATIN_CHAR_ALPHABET = "etaoinsrhdlcumwfgpybvkjxqzéóàüíáäêèãúôçâöñßùûîõìœëïòðåæþýøžš'"
 LATIN_CHAR_ALPHABET_CAP = LATIN_CHAR_ALPHABET.upper()
 NUMBER_ALPHABET = "1234567890'^"
 SYMBOLS_ALPHABET = ". ,()/1234567890'^[];…!?-+*&:%$«»¿\"？"
@@ -250,8 +261,10 @@ def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row=F
 
 
 def isLastRow(sheet, index):
-    return all(not item for item in [sheet.cell(row=index, column=col).value for col in list(range(1, 10))+list(range(41, 50))]) and all(
-        not item for item in [sheet.cell(row=index + 1, column=col).value for col in list(range(1, 10))+list(range(41, 50))])
+    this_row_is_empty = all(not item for item in [sheet.cell(row=index, column=col).value for col in list(range(1, 10))+list(range(41, 50))])
+    next_row_is_empty = all(not item for item in [sheet.cell(row=index + 1, column=col).value for col in list(range(1, 10))+list(range(41, 50))])
+    col10_is_empty_from_next_row = all(not item for item in [sheet.cell(row=row, column=11).value for row in range(index+1, index + 31)])
+    return this_row_is_empty and next_row_is_empty and col10_is_empty_from_next_row
 
 
 def isIrrelevantRow(sheet, index):

@@ -7,29 +7,31 @@ import ExtendedDbCreator
 import JMDictForeignMeaningsUpdater
 from Globals import *
 
-prepare_foreign_meanings = True
-prepare_grammar_db = True
-prepare_extended_db = True
+prepare_foreign_meanings = False
+prepare_grammar_db = False
+prepare_extended_db = False
+prepare_conj_lengths = True
 prepare_kanji_db = False
 prepare_conj_db = False
 prepare_frequency_db = False
-create_workbooks = True
+update_workbooks = True
 
 prepare_db_for_release = False
 if prepare_db_for_release:
     prepare_foreign_meanings = True
     prepare_grammar_db = True
     prepare_extended_db = True
-    prepare_kanji_db = True
-    prepare_frequency_db = True
-    create_workbooks = True
+    prepare_conj_lengths = True
+    prepare_kanji_db = False
+    prepare_frequency_db = False
+    update_workbooks = True
 
 if prepare_foreign_meanings:
     JMDictForeignMeaningsUpdater.main()
 
 if prepare_grammar_db:
     # region Reading worksheets
-    GrammarWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
+    GrammarWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - with foreign.xlsx', data_only=True)
     print("Finished loading Grammar - 3000 kanji.xlsx")
 
     wsMeaningsEN = GrammarWorkbook["Meanings"]
@@ -42,7 +44,7 @@ if prepare_grammar_db:
     wsTypes = GrammarWorkbook["Types"]
     wsGrammar = GrammarWorkbook["Grammar"]
 
-    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
+    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - with foreign.xlsx', data_only=True)
     print("Finished loading Verbs - 3000 kanji.xlsx")
     wsVerbsForGrammar = VerbsWorkbook["VerbsForGrammar"]
     wsVerbs = VerbsWorkbook["Verbs"]
@@ -258,9 +260,8 @@ if prepare_grammar_db:
                             # Leaving only relevant characters in the section
                             for char in section:
                                 if (sectionIsANumber and char in Globals.NUMBER_ALPHABET) \
-                                        or (not sectionIsANumber
-                                            and (char in Globals.LATIN_CHAR_ALPHABET
-                                                 or char in Globals.LATIN_CHAR_ALPHABET_CAP)):
+                                        or (not sectionIsANumber and (char in Globals.LATIN_CHAR_ALPHABET or char in Globals.LATIN_CHAR_ALPHABET_CAP)
+                                ):
                                     concatenatedSection += char
                             if not sectionIsANumber: concatenatedSection = re.sub(Globals.NUMBER_ALPHABET, '', concatenatedSection)  # Removing digits from non-number sections
 
@@ -301,7 +302,7 @@ if prepare_grammar_db:
     # endregion
 
     # region Saving the results to xlsx & csv
-    if create_workbooks:
+    if update_workbooks:
         GrammarWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - ready for Japagram.xlsx')
         VerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx')
 
@@ -320,10 +321,100 @@ if prepare_grammar_db:
     Globals.create_csv_from_worksheet(wsMultExplES, name("MultExplES"), idx("A"), idx("D"))
     Globals.create_csv_from_worksheet(wsExamples, name("Examples"), idx("A"), idx("F"))
     Globals.create_csv_from_worksheet(wsVerbsForGrammar, name("VerbsForGrammar"), idx("A"), idx("P"))
-    Globals.create_csv_from_worksheet(wsLatinConj, name("LatinConj"), idx("A"), idx("GA"))
-    Globals.create_csv_from_worksheet(wsKanjiConj, name("KanjiConj"), idx("A"), idx("GA"))
-    Globals.create_csv_from_worksheet(wsVerbsLengths, name("VerbsLengths"), idx("A"), idx("GA"), True)
-    Globals.create_csv_from_worksheet(wsVerbsKanjiLengths, name("VerbsKanjiLengths"), idx("A"), idx("GA"), True)
+    Globals.create_csv_from_worksheet(wsLatinConj, name("LatinConj"), idx("A"), idx("GH"))
+    Globals.create_csv_from_worksheet(wsKanjiConj, name("KanjiConj"), idx("A"), idx("GH"))
+    # endregion
+
+if prepare_conj_lengths:
+    # region Reading worksheets
+    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx', data_only=True)
+    print("Finished loading Verbs - 3000 kanji - ready for Japagram.xlsx")
+    wsVerbs = VerbsWorkbook["Verbs"]
+    wsLatinConj = VerbsWorkbook["LatinConj"]
+    wsKanjiConj = VerbsWorkbook["KanjiConj"]
+
+    Globals.clearSheet(VerbsWorkbook, "VerbsLengths")
+    Globals.clearSheet(VerbsWorkbook, "VerbsKanjiLengths")
+    wsVerbsLengths = VerbsWorkbook["VerbsLengths"]
+    wsVerbsKanjiLengths = VerbsWorkbook["VerbsKanjiLengths"]
+    # endregion
+
+    # region Updating the max verb conjugation lengths
+    verbsRow = 2
+    verbsForGrammarRow = 2
+    latin_lengths = {}
+    kanji_lengths = {}
+    family_row_index = 0
+    while not (wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_FAMILY).value == "-" and wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_SUMMARY_EN).value == "-"):
+        if wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_FAMILY).value and not wsVerbs.cell(row=verbsRow - 1, column=Globals.VERBS_COL_FAMILY).value:
+            family_row_index = int(wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_EXCEPTION_INDEX).value) + 1
+        if wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KANJI).value:
+            exception_row_index = int(wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_EXCEPTION_INDEX).value)
+            if exception_row_index not in latin_lengths.keys(): latin_lengths[exception_row_index] = {}
+            if exception_row_index not in kanji_lengths.keys(): kanji_lengths[exception_row_index] = {}
+
+            current_col = VERBS_COL_CONJ_FIRST_CONJ
+            while wsLatinConj.cell(row=family_row_index, column=current_col).value \
+                    or wsLatinConj.cell(row=family_row_index, column=current_col + 1).value \
+                    or wsLatinConj.cell(row=family_row_index, column=current_col + 2).value \
+                    or wsLatinConj.cell(row=family_row_index, column=current_col + 3).value \
+                    or wsLatinConj.cell(row=family_row_index, column=current_col + 4).value \
+                    or wsLatinConj.cell(row=family_row_index, column=current_col + 5).value:
+                if wsLatinConj.cell(row=exception_row_index, column=current_col).value:
+                    conjugation = wsLatinConj.cell(row=exception_row_index, column=current_col).value
+                    romaji_conjugation = conjugation if conjugation else ""
+                    conjugation = wsKanjiConj.cell(row=exception_row_index, column=current_col).value
+                    kanji_conjugation = conjugation if conjugation else ""
+                else:
+                    root = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_ROMAJI_ROOT).value
+                    conjugation = wsLatinConj.cell(row=family_row_index, column=current_col).value
+                    romaji_conjugation = (root if root else "") + (conjugation if conjugation else "")
+                    root = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KANJI_ROOT).value
+                    conjugation = wsKanjiConj.cell(row=family_row_index, column=current_col).value
+                    kanji_conjugation = (root if root else "") + (conjugation if conjugation else "")
+
+                romaji_length = len(romaji_conjugation)
+                kanji_length = len(kanji_conjugation)
+                latin_lengths[exception_row_index][current_col] = max(romaji_length, latin_lengths[exception_row_index][current_col]) \
+                    if current_col in latin_lengths[exception_row_index].keys() else romaji_length
+                kanji_lengths[exception_row_index][current_col] = max(kanji_length, kanji_lengths[exception_row_index][current_col]) \
+                    if current_col in kanji_lengths[exception_row_index].keys() else kanji_length
+                current_col += 1
+        verbsRow += 1
+        if verbsRow % 1000 == 0: print(f'Processed lengths for {wsVerbs} - row {verbsRow}')
+
+    exception_indexes = sorted(list(latin_lengths.keys()))
+    family_exception_index = 0
+    family_exception_indexes = []
+    last_index = 0
+    for index in exception_indexes:
+        if index == last_index + 1:
+            for length in latin_lengths[index].keys():
+                latin_lengths[index][length] = max(latin_lengths[family_exception_index][length], latin_lengths[index][length])
+                kanji_lengths[index][length] = max(kanji_lengths[family_exception_index][length], kanji_lengths[index][length])
+        else:
+            family_exception_index = index
+            family_exception_indexes.append(index)
+        last_index = index
+
+    for index in family_exception_indexes:
+        for column_index in latin_lengths[index].keys():
+            wsVerbsLengths.cell(row=index, column=column_index).value = latin_lengths[index][column_index]
+            wsVerbsKanjiLengths.cell(row=index, column=column_index).value = kanji_lengths[index][column_index]
+
+            max_latin_value = wsVerbsLengths.cell(row=1, column=column_index).value if wsVerbsLengths.cell(row=1, column=column_index).value else 0
+            max_kanji_value = wsVerbsKanjiLengths.cell(row=1, column=column_index).value if wsVerbsKanjiLengths.cell(row=1, column=column_index).value else 0
+            wsVerbsLengths.cell(row=1, column=column_index).value = max(latin_lengths[index][column_index], max_latin_value)
+            wsVerbsKanjiLengths.cell(row=1, column=column_index).value = max(kanji_lengths[index][column_index], max_kanji_value)
+
+    # endregion
+
+    # region Saving the results to xlsx & csv
+    if update_workbooks:
+        VerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx')
+
+    Globals.create_csv_from_worksheet(wsVerbsLengths, name("VerbsLengths"), idx("A"), idx("GH"), False)
+    Globals.create_csv_from_worksheet(wsVerbsKanjiLengths, name("VerbsKanjiLengths"), idx("A"), idx("GH"), False)
     # endregion
 
 if prepare_extended_db:
@@ -331,7 +422,7 @@ if prepare_extended_db:
 
 if prepare_kanji_db:
     # region Reading worksheets
-    RootsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Roots - 3000 kanji.xlsx', data_only=True)
+    RootsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Roots - 3000 kanji - MASTER.xlsx', data_only=True)
     print("Finished loading Roots - 3000 kanji.xlsx")
     Globals.clearSheet(RootsWorkbook, "Components")
     wsRadicals = RootsWorkbook["Radicals"]
@@ -371,7 +462,7 @@ if prepare_kanji_db:
         value = str(wsCJK_Decomposition.cell(row=row, column=1).value)
         key = [
             value,
-            str(Globals.convert_to_utf8(str(wsCJK_Decomposition.cell(row=row, column=1).value))),
+            str(Globals.convert_to_utf8(str(wsCJK_Decomposition.cell(row=row, column=1).value)).upper()),
             str(wsCJK_Decomposition.cell(row=row, column=3).value) if wsCJK_Decomposition.cell(row=row, column=4).value else "",
             str(wsCJK_Decomposition.cell(row=row, column=4).value) if wsCJK_Decomposition.cell(row=row, column=4).value else "",
             ""
@@ -536,7 +627,7 @@ if prepare_kanji_db:
     # endregion
 
     # region Saving the results to xlsx & csv
-    if create_workbooks:
+    if update_workbooks:
         RootsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Roots - 3000 kanji - ready for Japagram.xlsx')
 
     Globals.create_csv_from_worksheet(wsRadicals, name("Radicals"), idx("B"), idx("C"), False, 2)
@@ -549,7 +640,7 @@ if prepare_kanji_db:
 
 if prepare_conj_db:
     # region Reading worksheets
-    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
+    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - with foreign.xlsx', data_only=True)
     print("Finished loading Verbs - 3000 kanji.xlsx")
     wsVerbsForGrammar = VerbsWorkbook["VerbsForGrammar"]
     wsVerbs = VerbsWorkbook["Verbs"]
@@ -604,8 +695,8 @@ if prepare_conj_db:
         for latinRoot in latinRoots:
             current_verb_conjugations_latin = [latinRoot + termination for termination in conjugations_latin_per_family[conj_family][10:]]
             if not is_family_conj:
-                for col in range(0, last_col-10):
-                    current_verb_conjugations_latin[col] = wsLatinConj.cell(row=conjIndex, column=col+10).value
+                for col in range(0, last_col - 10):
+                    current_verb_conjugations_latin[col] = wsLatinConj.cell(row=conjIndex, column=col + 10).value
             for item in current_verb_conjugations_latin:
                 if item:
                     latinConjIndex[item] = [verbIndex] if item not in latinConjIndex.keys() else latinConjIndex[item] + [verbIndex]
@@ -614,8 +705,8 @@ if prepare_conj_db:
         for kanjiRoot in kanjiRoots:
             current_verb_conjugations_kanji = [kanjiRoot + termination for termination in conjugations_kanji_per_family[conj_family][10:]]
             if not is_family_conj:
-                for col in range(0, last_col-10):
-                    current_verb_conjugations_kanji[col] = wsKanjiConj.cell(row=conjIndex, column=col+10).value
+                for col in range(0, last_col - 10):
+                    current_verb_conjugations_kanji[col] = wsKanjiConj.cell(row=conjIndex, column=col + 10).value
             for item in current_verb_conjugations_kanji:
                 if item and item != '*':
                     kanjiConjIndex[item] = [verbIndex] if item not in kanjiConjIndex.keys() else kanjiConjIndex[item] + [verbIndex]
@@ -637,7 +728,7 @@ if prepare_conj_db:
     # endregion
 
     # region Saving the results to xlsx & csv
-    if create_workbooks:
+    if update_workbooks:
         VerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx')
 
     Globals.create_csv_from_worksheet(wsLatinConjIndex, name("VerbConjLatinSortedIndex"), idx("A"), idx("B"))
@@ -646,107 +737,32 @@ if prepare_conj_db:
 
 if prepare_frequency_db:
     # region Reading worksheets
-    GrammarWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji.xlsx', data_only=True)
-    print("Finished loading Grammar - 3000 kanji.xlsx")
-    wsMeaningsEN = GrammarWorkbook["Meanings"]
-    wsTypes = GrammarWorkbook["Types"]
-    wsGrammar = GrammarWorkbook["Grammar"]
-
-    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji.xlsx', data_only=True)
-    print("Finished loading Verbs - 3000 kanji.xlsx")
-    wsVerbsForGrammar = VerbsWorkbook["VerbsForGrammar"]
-
-    ExtendedWordsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Extended Words - 3000 kanji.xlsx', data_only=True)
-    print("Finished loading Verbs - 3000 kanji.xlsx")
-    wsExtendedWords = ExtendedWordsWorkbook["Words"]
-
     FrequencyWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Frequencies.xlsx', data_only=True)
     print("Finished loading Frequencies.xlsx")
     wsFrequencyWords = FrequencyWorkbook["Words"]
+    Globals.clearSheet(FrequencyWorkbook, "WordsIndexed")
+    wsFrequencyWordsIndexed = FrequencyWorkbook["WordsIndexed"]
     # endregion
 
-    # region Creating the words dictionary
+    # region Sorting the words
     words = {}
-
-
-    def get_small_joined_list(small_meanings_list):
-        return ', '.join(remove_duplicates_keep_order([item.strip() for item in ','.join(small_meanings_list).split(',')]))
-
-
-    for ws in [wsGrammar, wsTypes, wsVerbsForGrammar]:
-        row = 2
-        while not Globals.isLastRow(ws, row):
-            kanji = str(ws.cell(row=row, column=Globals.TYPES_COL_KANJI).value)
-            alts = str(ws.cell(row=row, column=Globals.TYPES_COL_ALTS).value)
-            romaji = str(ws.cell(row=row, column=Globals.TYPES_COL_ROMAJI).value)
-            val = ws.cell(row=row, column=Globals.TYPES_COL_MEANINGS_EN).value
-            meaning_indexes = str(val if val else "").split(";")
-
-            if not romaji: continue
-            small_meanings = []
-            for index in meaning_indexes:
-                value = wsMeaningsEN.cell(row=int(index), column=Globals.TYPES_COL_ROMAJI).value
-                if value:
-                    small_meaning = value.split(",")[0].split("(")[0]
-                    if small_meaning: small_meanings.append(small_meaning)
-
-            if kanji in words.keys():
-                words[kanji] = [words[kanji][0] + '#' + romaji,
-                                words[kanji][1] + '#' + get_small_joined_list(small_meanings)
-                                ]
-            else:
-                words[kanji] = [romaji, get_small_joined_list(small_meanings)]
-
-            for alt_spelling in alts.split(";"):
-                if is_latin(alt_spelling): continue
-                if alt_spelling in words.keys():
-                    words[alt_spelling] = [words[alt_spelling][0] + '#' + romaji,
-                                           words[alt_spelling][1] + '#' + get_small_joined_list(small_meanings)
-                                           ]
-                else:
-                    words[alt_spelling] = [romaji, get_small_joined_list(small_meanings)]
-            row += 1
-
-    row = 2
-    while not Globals.isLastRow(wsExtendedWords, row):
-        kanji = str(wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_KANJI).value)
-        alts = str(wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_ALTS).value)
-        romaji = str(wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_ROMAJI).value)
-        val = wsExtendedWords.cell(row=row, column=Globals.EXT_WORD_COL_MEANINGS_EN).value
-        meaning = str(val if val else "").split("(")[0]
-
-        if not romaji: continue
-        if kanji in words.keys():
-            words[kanji] = [words[kanji][0] + '#' + romaji,
-                            words[kanji][1] + '#' + meaning]
-        else:
-            words[kanji] = [romaji, meaning]
-
-        for alt_spelling in alts.split("#"):
-            if is_latin(alt_spelling): continue
-            alt_spelling = alt_spelling.strip()
-            if alt_spelling in words.keys():
-                words[alt_spelling] = [words[alt_spelling][0] + '#' + romaji,
-                                       words[alt_spelling][1] + '#' + meaning
-                                       ]
-            else:
-                words[alt_spelling] = [romaji, meaning]
-        row += 1
-    # endregion
-
-    # region Updating the Frequencies sheet with meanings
     row = 2
     while not Globals.isLastRow(wsFrequencyWords, row):
         kanji = wsFrequencyWords.cell(row=row, column=2).value
-        if kanji and kanji in words.keys():
-            wsFrequencyWords.cell(row=row, column=3).value = words[kanji][0]
-            wsFrequencyWords.cell(row=row, column=4).value = words[kanji][1]
+        words[kanji] = wsFrequencyWords.cell(row=row, column=1).value
+        row += 1
+
+    sortedKanjis = sorted(words.keys(), key=lambda x: convert_to_utf8(x))
+    row = 1
+    for item in sortedKanjis:
+        wsFrequencyWordsIndexed.cell(row=row, column=1).value = item
+        wsFrequencyWordsIndexed.cell(row=row, column=2).value = words[item]
         row += 1
     # endregion
 
     # region Saving the results to xlsx & csv
-    if create_workbooks:
+    if update_workbooks:
         FrequencyWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Frequencies.xlsx')
 
-    Globals.create_csv_from_worksheet(wsFrequencyWords, name("Frequencies"), idx("A"), idx("D"), False, 2)
+    Globals.create_csv_from_worksheet(wsFrequencyWordsIndexed, name("FrequenciesIndexed"), idx("A"), idx("B"), False, 1)
     # endregion

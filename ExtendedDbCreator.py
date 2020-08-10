@@ -190,9 +190,9 @@ def main():
     }
 
     # region Preparations
-    localWordsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - before foreign.xlsx', data_only=True)
+    localWordsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - MASTER.xlsx', data_only=True)
     print("Finished loading Grammar - 3000 kanji - before foreign.xlsx")
-    localVerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - before foreign.xlsx', data_only=True)
+    localVerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - MASTER.xlsx', data_only=True)
     print("Finished loading Verbs - 3000 kanji - before foreign.xlsx")
     extendedWordsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Extended Words - 3000 kanji.xlsx', data_only=True)
     print("Finished loading Extended Words - 3000 kanji - before foreign.xlsx")
