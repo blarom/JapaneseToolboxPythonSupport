@@ -345,11 +345,19 @@ if prepare_conj_lengths:
     latin_lengths = {}
     kanji_lengths = {}
     family_row_index = 0
+    family = ''
     while not (wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_FAMILY).value == "-" and wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_SUMMARY_EN).value == "-"):
+
+        is_family_row = False
         if wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_FAMILY).value and not wsVerbs.cell(row=verbsRow - 1, column=Globals.VERBS_COL_FAMILY).value:
             family_row_index = int(wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_EXCEPTION_INDEX).value) + 1
-        if wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KANJI).value:
-            exception_row_index = int(wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_EXCEPTION_INDEX).value)
+            family = wsLatinConj.cell(row=family_row_index, column=1).value
+            wsVerbsLengths.cell(row=family_row_index, column=1).value = family
+            wsVerbsKanjiLengths.cell(row=family_row_index, column=1).value = family
+            is_family_row = True
+
+        if wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KANJI).value or is_family_row:
+            exception_row_index = int(wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_EXCEPTION_INDEX).value) + 1
             if exception_row_index not in latin_lengths.keys(): latin_lengths[exception_row_index] = {}
             if exception_row_index not in kanji_lengths.keys(): kanji_lengths[exception_row_index] = {}
 
