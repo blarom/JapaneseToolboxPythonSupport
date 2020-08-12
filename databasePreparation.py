@@ -362,7 +362,7 @@ if prepare_conj_lengths:
                     or wsLatinConj.cell(row=family_row_index, column=current_col + 3).value \
                     or wsLatinConj.cell(row=family_row_index, column=current_col + 4).value \
                     or wsLatinConj.cell(row=family_row_index, column=current_col + 5).value:
-                if wsLatinConj.cell(row=exception_row_index, column=current_col).value:
+                if is_family_row or exception_row_index != family_row_index and wsLatinConj.cell(row=exception_row_index, column=current_col).value:
                     conjugation = wsLatinConj.cell(row=exception_row_index, column=current_col).value
                     romaji_conjugation = conjugation if conjugation else ""
                     conjugation = wsKanjiConj.cell(row=exception_row_index, column=current_col).value
@@ -392,8 +392,8 @@ if prepare_conj_lengths:
     for index in exception_indexes:
         if index == last_index + 1:
             for length in latin_lengths[index].keys():
-                latin_lengths[index][length] = max(latin_lengths[family_exception_index][length], latin_lengths[index][length])
-                kanji_lengths[index][length] = max(kanji_lengths[family_exception_index][length], kanji_lengths[index][length])
+                latin_lengths[family_exception_index][length] = max(latin_lengths[family_exception_index][length], latin_lengths[index][length])
+                kanji_lengths[family_exception_index][length] = max(kanji_lengths[family_exception_index][length], kanji_lengths[index][length])
         else:
             family_exception_index = index
             family_exception_indexes.append(index)
