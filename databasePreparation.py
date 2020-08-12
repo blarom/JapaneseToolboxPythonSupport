@@ -48,10 +48,6 @@ if prepare_grammar_db:
     print("Finished loading Verbs - 3000 kanji.xlsx")
     wsVerbsForGrammar = VerbsWorkbook["VerbsForGrammar"]
     wsVerbs = VerbsWorkbook["Verbs"]
-    wsLatinConj = VerbsWorkbook["LatinConj"]
-    wsKanjiConj = VerbsWorkbook["KanjiConj"]
-    wsVerbsLengths = VerbsWorkbook["VerbsLengths"]
-    wsVerbsKanjiLengths = VerbsWorkbook["VerbsKanjiLengths"]
 
     Globals.clearSheet(GrammarWorkbook, "SortedIndexKanji")
     Globals.clearSheet(GrammarWorkbook, "SortedIndexRomaji")
@@ -321,8 +317,6 @@ if prepare_grammar_db:
     Globals.create_csv_from_worksheet(wsMultExplES, name("MultExplES"), idx("A"), idx("D"))
     Globals.create_csv_from_worksheet(wsExamples, name("Examples"), idx("A"), idx("F"))
     Globals.create_csv_from_worksheet(wsVerbsForGrammar, name("VerbsForGrammar"), idx("A"), idx("P"))
-    Globals.create_csv_from_worksheet(wsLatinConj, name("LatinConj"), idx("A"), idx("GH"))
-    Globals.create_csv_from_worksheet(wsKanjiConj, name("KanjiConj"), idx("A"), idx("GH"))
     # endregion
 
 if prepare_conj_lengths:
@@ -421,6 +415,8 @@ if prepare_conj_lengths:
     if update_workbooks:
         VerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx')
 
+    Globals.create_csv_from_worksheet(wsLatinConj, name("LatinConj"), idx("A"), idx("GH"))
+    Globals.create_csv_from_worksheet(wsKanjiConj, name("KanjiConj"), idx("A"), idx("GH"))
     Globals.create_csv_from_worksheet(wsVerbsLengths, name("VerbsLengths"), idx("A"), idx("GH"), False)
     Globals.create_csv_from_worksheet(wsVerbsKanjiLengths, name("VerbsKanjiLengths"), idx("A"), idx("GH"), False)
     # endregion
