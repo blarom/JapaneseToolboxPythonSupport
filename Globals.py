@@ -1,6 +1,9 @@
 
 from openpyxl.utils.cell import coordinate_from_string, column_index_from_string
 
+MASTER_DIR = 'C:/Users/Bar/Dropbox/Japanese'
+OUTPUT_DIR = 'C:/Projects/Workspace/JapaneseToolboxPythonSupport'
+JAPAGRAM_ASSETS_DIR = 'C:/Projects/Workspace/Japagram/app/src/main/assets'
 
 TYPES_COL_INDEX = 1
 TYPES_COL_ROMAJI = 2
@@ -213,7 +216,6 @@ NUMBER_ALPHABET = "1234567890'^"
 SYMBOLS_ALPHABET = ". ,()/1234567890'^[];…!?-+*&:%$«»¿\"？"
 WORD_LENGTH_THRESHOLD = 3
 SECTION_LENGTH_THRESHOLD = 15
-ASSETS_PATH = r'C:\Projects\Workspace\Japagram\app\src\main\assets'
 
 
 
@@ -248,7 +250,7 @@ def clearSheet(wb, sheet_name):
 
 
 def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row=False, start_row=1):
-    fh = open(ASSETS_PATH + '/' + csv_name + ".csv", 'w+', encoding='utf-8')
+    fh = open(f'{JAPAGRAM_ASSETS_DIR}/{csv_name}.csv', 'w+', encoding='utf-8')
     content_lines = []
     index = start_row
     while not isLastRow(ws, index):

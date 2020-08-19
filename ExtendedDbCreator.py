@@ -1,13 +1,14 @@
 #!/usr/bin/python -tt
 
-#Windows Powershell grep:
-#Select-String -Path .\JMdict.xml -Pattern "CNET" -Context 4,4
+# Windows Powershell grep:
+# Select-String -Path .\JMdict.xml -Pattern "CNET" -Context 4,4
 
 import re
 import openpyxl
 
 import Globals
 from Converter import Converter
+
 
 def main():
     current_entry = ''
@@ -35,10 +36,12 @@ def main():
         'chem': 'ZC',
         'chn': 'ZCL',
         'col': 'coq',
+        'cop': '',
         'comp': 'ZI',
         'conj': 'CO',
         'cop-da': '',
         'ctr': 'C',
+        'Christn': '',
         'derog': 'Dr',
         'eK': '',
         'ek': '',
@@ -57,6 +60,7 @@ def main():
         'io': '',
         'iv': '',
         'ling': 'ZL',
+        'litf': '',
         'm-sl': 'ZMg',
         'male': 'LMt',
         'male-sl': 'LMt',
@@ -190,11 +194,11 @@ def main():
     }
 
     # region Preparations
-    localWordsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - MASTER.xlsx', data_only=True)
+    localWordsWorkbook = openpyxl.load_workbook(filename=f'{Globals.MASTER_DIR}/Grammar - 3000 kanji - MASTER.xlsx', data_only=True)
     print("Finished loading Grammar - 3000 kanji - before foreign.xlsx")
-    localVerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - MASTER.xlsx', data_only=True)
+    localVerbsWorkbook = openpyxl.load_workbook(filename=f'{Globals.MASTER_DIR}/Verbs - 3000 kanji - MASTER.xlsx', data_only=True)
     print("Finished loading Verbs - 3000 kanji - before foreign.xlsx")
-    extendedWordsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Extended Words - 3000 kanji.xlsx', data_only=True)
+    extendedWordsWorkbook = openpyxl.load_workbook(filename=f'{Globals.MASTER_DIR}/Extended Words - 3000 kanji - MASTER.xlsx', data_only=True)
     print("Finished loading Extended Words - 3000 kanji - before foreign.xlsx")
     wsLocalMeanings = localWordsWorkbook["Meanings"]
     wsLocalMeaningsFR = localWordsWorkbook["MeaningsFR"]
@@ -209,7 +213,6 @@ def main():
     wsExtendedWordsFrenchIndex = extendedWordsWorkbook["FrenchIndex"]
     wsExtendedWordsSpanishIndex = extendedWordsWorkbook["SpanishIndex"]
     wsExtendedWordsKanjiIndex = extendedWordsWorkbook["KanjiIndex"]
-
 
     class Word:
         def __init__(self,
@@ -238,9 +241,7 @@ def main():
             self.types_for_word = types_for_word
             self.common = common
 
-
     converter = Converter()
-
 
     def add_index_to_dict(index_dict, index, key):
         if key in index_dict.keys():
@@ -250,11 +251,6 @@ def main():
                 index_dict[key] = indexes
         else:
             index_dict[key] = [index]
-
-
-
-
-
 
     def binary_search(words_list, text, lo=0, hi=None):
         # https://stackoverflow.com/questions/4161629/search-a-list-of-objects-in-python
@@ -273,7 +269,6 @@ def main():
                 return -1
 
         return -1
-
 
     # endregion
 
@@ -364,7 +359,7 @@ def main():
                     # region Getting the list of JMtypes
                     matches = re.findall(r"<(pos|field|misc)>&(.+?);</(pos|field|misc)>", senses[i])
                     JMtypes = [match[1] for match in matches]
-                    partsOfSpeech = ';'.join([LEGEND_DICT[JMtype] for JMtype in JMtypes if LEGEND_DICT[JMtype] != '']).split(';')
+                    partsOfSpeech = ';'.join([LEGEND_DICT[JMtype] for JMtype in JMtypes if JMtype in LEGEND_DICT.keys() and LEGEND_DICT[JMtype] != '']).split(';')
                     partsOfSpeech = list(set(partsOfSpeech))
                     # endregion
 
@@ -463,31 +458,31 @@ def main():
                     if tempMeanings[i] != '':
                         types_for_word.append(tempPOS[i])
                         english_meanings_for_word.append(tempMeanings[i]
-                                                         .replace('"','$$$$')
-                                                         .replace('#','@@@@')
-                                                         .replace('&amp;','&')
-                                                         .replace('&gt;','>')
-                                                         .replace('&lt;','<'))
+                                                         .replace('"', '$$$$')
+                                                         .replace('#', '@@@@')
+                                                         .replace('&amp;', '&')
+                                                         .replace('&gt;', '>')
+                                                         .replace('&lt;', '<'))
                 tempMeanings = french_meanings_in_sense
                 french_meanings_in_sense = []
                 for i in range(0, len(tempMeanings)):
                     if tempMeanings[i] != '':
                         french_meanings_in_sense.append(tempMeanings[i]
-                                                         .replace('"','$$$$')
-                                                         .replace('#','@@@@')
-                                                         .replace('&amp;','&')
-                                                         .replace('&gt;','>')
-                                                         .replace('&lt;','<'))
+                                                        .replace('"', '$$$$')
+                                                        .replace('#', '@@@@')
+                                                        .replace('&amp;', '&')
+                                                        .replace('&gt;', '>')
+                                                        .replace('&lt;', '<'))
                 tempMeanings = spanish_meanings_in_sense
                 spanish_meanings_in_sense = []
                 for i in range(0, len(tempMeanings)):
                     if tempMeanings[i] != '':
                         spanish_meanings_in_sense.append(tempMeanings[i]
-                                                         .replace('"','$$$$')
-                                                         .replace('#','@@@@')
-                                                         .replace('&amp;','&')
-                                                         .replace('&gt;','>')
-                                                         .replace('&lt;','<'))
+                                                         .replace('"', '$$$$')
+                                                         .replace('#', '@@@@')
+                                                         .replace('&amp;', '&')
+                                                         .replace('&gt;', '>')
+                                                         .replace('&lt;', '<'))
                 # endregion
 
                 # region Creating the words
@@ -567,7 +562,7 @@ def main():
             # endregion
 
             romaji = romaji.replace(' ', '')
-            kanji = kanji.replace('～','')
+            kanji = kanji.replace('～', '')
             localWordsList.append(Word(kanji=kanji, romaji=romaji))
 
             typesIndex += 1
@@ -603,9 +598,9 @@ def main():
 
         types = '#'.join(word.types_for_word)
         altS = '#'.join(word.altSpellings)
-        meaningsEN = '#'.join(word.english_meanings).replace('|','-')
-        meaningsFR = '#'.join(word.french_meanings).replace('|','-')
-        meaningsES = '#'.join(word.spanish_meanings).replace('|','-')
+        meaningsEN = '#'.join(word.english_meanings).replace('|', '-')
+        meaningsFR = '#'.join(word.french_meanings).replace('|', '-')
+        meaningsES = '#'.join(word.spanish_meanings).replace('|', '-')
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_INDEX).value = row_index
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_ROMAJI).value = word.romaji
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_KANJI).value = word.kanji
@@ -724,12 +719,18 @@ def main():
 
     # region Saving the results
     print("Saving the results")
-    extendedWordsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Extended Words - 3000 kanji.xlsx')
-    base = 'C:/Projects/Workspace/Japagram/app/src/main/assets/LineExtendedDb - '
-    with open(base + 'Words.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsCSV_rows))
-    with open(base + 'KanjiIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsKanjiIndexCSV_rows))
-    with open(base + 'RomajiIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsRomajiIndexCSV_rows))
-    with open(base + 'EnglishIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsEnglishIndexCSV_rows))
-    with open(base + 'FrenchIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsFrenchIndexCSV_rows))
-    with open(base + 'SpanishIndex.csv', 'w', encoding='utf-8') as f_out: f_out.write('\n'.join(wsExtendedWordsSpanishIndexCSV_rows))
+    extendedWordsWorkbook.save(filename=f'{Globals.OUTPUT_DIR}/Extended Words - 3000 kanji.xlsx')
+    base = f'{Globals.JAPAGRAM_ASSETS_DIR}/LineExtendedDb - '
+    with open(base + 'Words.csv', 'w', encoding='utf-8') as f_out:
+        f_out.write('\n'.join(wsExtendedWordsCSV_rows))
+    with open(base + 'KanjiIndex.csv', 'w', encoding='utf-8') as f_out:
+        f_out.write('\n'.join(wsExtendedWordsKanjiIndexCSV_rows))
+    with open(base + 'RomajiIndex.csv', 'w', encoding='utf-8') as f_out:
+        f_out.write('\n'.join(wsExtendedWordsRomajiIndexCSV_rows))
+    with open(base + 'EnglishIndex.csv', 'w', encoding='utf-8') as f_out:
+        f_out.write('\n'.join(wsExtendedWordsEnglishIndexCSV_rows))
+    with open(base + 'FrenchIndex.csv', 'w', encoding='utf-8') as f_out:
+        f_out.write('\n'.join(wsExtendedWordsFrenchIndexCSV_rows))
+    with open(base + 'SpanishIndex.csv', 'w', encoding='utf-8') as f_out:
+        f_out.write('\n'.join(wsExtendedWordsSpanishIndexCSV_rows))
     # endregion

@@ -4,24 +4,27 @@ import re
 import openpyxl
 import Globals
 import ExtendedDbCreator
+import ExtendedDbCreator_Names
 import JMDictForeignMeaningsUpdater
 from Globals import *
 
-prepare_foreign_meanings = False
-prepare_grammar_db = False
-prepare_extended_db = False
+prepare_foreign_meanings = True
+prepare_grammar_db = True
+prepare_extended_db = True
 prepare_conj_lengths = True
+prepare_names_db = False
 prepare_kanji_db = False
-prepare_conj_db = False
+prepare_conj_db = False  # Not used, resulting db is too big to be useful
 prepare_frequency_db = False
 update_workbooks = True
 
-prepare_db_for_release = False
+prepare_db_for_release = True
 if prepare_db_for_release:
     prepare_foreign_meanings = True
     prepare_grammar_db = True
     prepare_extended_db = True
     prepare_conj_lengths = True
+    prepare_names_db = False
     prepare_kanji_db = False
     prepare_frequency_db = False
     update_workbooks = True
@@ -31,7 +34,7 @@ if prepare_foreign_meanings:
 
 if prepare_grammar_db:
     # region Reading worksheets
-    GrammarWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - with foreign.xlsx', data_only=True)
+    GrammarWorkbook = openpyxl.load_workbook(filename=f'{Globals.OUTPUT_DIR}/Grammar - 3000 kanji - with foreign.xlsx', data_only=True)
     print("Finished loading Grammar - 3000 kanji.xlsx")
 
     wsMeaningsEN = GrammarWorkbook["Meanings"]
@@ -44,7 +47,7 @@ if prepare_grammar_db:
     wsTypes = GrammarWorkbook["Types"]
     wsGrammar = GrammarWorkbook["Grammar"]
 
-    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - with foreign.xlsx', data_only=True)
+    VerbsWorkbook = openpyxl.load_workbook(filename=f'{Globals.OUTPUT_DIR}/Verbs - 3000 kanji - with foreign.xlsx', data_only=True)
     print("Finished loading Verbs - 3000 kanji.xlsx")
     wsVerbsForGrammar = VerbsWorkbook["VerbsForGrammar"]
     wsVerbs = VerbsWorkbook["Verbs"]
@@ -299,8 +302,8 @@ if prepare_grammar_db:
 
     # region Saving the results to xlsx & csv
     if update_workbooks:
-        GrammarWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - ready for Japagram.xlsx')
-        VerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx')
+        GrammarWorkbook.save(filename=f'{Globals.OUTPUT_DIR}/Grammar - 3000 kanji - ready for Japagram.xlsx')
+        VerbsWorkbook.save(filename=f'{Globals.OUTPUT_DIR}/Verbs - 3000 kanji - ready for Japagram.xlsx')
 
     Globals.create_csv_from_worksheet(wsSortedIndexKanji, name("GrammarSortedIndexKanji"), idx("A"), idx("C"))
     Globals.create_csv_from_worksheet(wsSortedIndexRomaji, name("GrammarSortedIndexRomaji"), idx("A"), idx("B"))
@@ -321,7 +324,7 @@ if prepare_grammar_db:
 
 if prepare_conj_lengths:
     # region Reading worksheets
-    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx', data_only=True)
+    VerbsWorkbook = openpyxl.load_workbook(filename=f'{Globals.OUTPUT_DIR}/Verbs - 3000 kanji - ready for Japagram.xlsx', data_only=True)
     print("Finished loading Verbs - 3000 kanji - ready for Japagram.xlsx")
     wsVerbs = VerbsWorkbook["Verbs"]
     wsLatinConj = VerbsWorkbook["LatinConj"]
@@ -413,7 +416,7 @@ if prepare_conj_lengths:
 
     # region Saving the results to xlsx & csv
     if update_workbooks:
-        VerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx')
+        VerbsWorkbook.save(filename=f'{Globals.OUTPUT_DIR}/Verbs - 3000 kanji - ready for Japagram.xlsx')
 
     Globals.create_csv_from_worksheet(wsLatinConj, name("LatinConj"), idx("A"), idx("GH"))
     Globals.create_csv_from_worksheet(wsKanjiConj, name("KanjiConj"), idx("A"), idx("GH"))
@@ -421,12 +424,13 @@ if prepare_conj_lengths:
     Globals.create_csv_from_worksheet(wsVerbsKanjiLengths, name("VerbsKanjiLengths"), idx("A"), idx("GH"), False)
     # endregion
 
-if prepare_extended_db:
-    ExtendedDbCreator.main()
+if prepare_extended_db: ExtendedDbCreator.main()
+
+if prepare_names_db: ExtendedDbCreator_Names.main()
 
 if prepare_kanji_db:
     # region Reading worksheets
-    RootsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Roots - 3000 kanji - MASTER.xlsx', data_only=True)
+    RootsWorkbook = openpyxl.load_workbook(filename=f'{Globals.MASTER_DIR}/Roots - 3000 kanji - MASTER.xlsx', data_only=True)
     print("Finished loading Roots - 3000 kanji.xlsx")
     Globals.clearSheet(RootsWorkbook, "Components")
     wsRadicals = RootsWorkbook["Radicals"]
@@ -632,7 +636,7 @@ if prepare_kanji_db:
 
     # region Saving the results to xlsx & csv
     if update_workbooks:
-        RootsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Roots - 3000 kanji - ready for Japagram.xlsx')
+        RootsWorkbook.save(filename=f'{Globals.OUTPUT_DIR}/Roots - 3000 kanji - ready for Japagram.xlsx')
 
     Globals.create_csv_from_worksheet(wsRadicals, name("Radicals"), idx("B"), idx("C"), False, 2)
     Globals.create_csv_from_worksheet(wsKanjiDict, name("KanjiDictionary"), idx("B"), idx("F"), False, 2)
@@ -644,7 +648,7 @@ if prepare_kanji_db:
 
 if prepare_conj_db:
     # region Reading worksheets
-    VerbsWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - with foreign.xlsx', data_only=True)
+    VerbsWorkbook = openpyxl.load_workbook(filename=f'{Globals.OUTPUT_DIR}/Verbs - 3000 kanji - with foreign.xlsx', data_only=True)
     print("Finished loading Verbs - 3000 kanji.xlsx")
     wsVerbsForGrammar = VerbsWorkbook["VerbsForGrammar"]
     wsVerbs = VerbsWorkbook["Verbs"]
@@ -733,7 +737,7 @@ if prepare_conj_db:
 
     # region Saving the results to xlsx & csv
     if update_workbooks:
-        VerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - ready for Japagram.xlsx')
+        VerbsWorkbook.save(filename=f'{Globals.OUTPUT_DIR}/Verbs - 3000 kanji - ready for Japagram.xlsx')
 
     Globals.create_csv_from_worksheet(wsLatinConjIndex, name("VerbConjLatinSortedIndex"), idx("A"), idx("B"))
     Globals.create_csv_from_worksheet(wsKanjiConjIndex, name("VerbConjKanjiSortedIndex"), idx("A"), idx("B"))
@@ -741,7 +745,7 @@ if prepare_conj_db:
 
 if prepare_frequency_db:
     # region Reading worksheets
-    FrequencyWorkbook = openpyxl.load_workbook(filename='C:/Users/Bar/Dropbox/Japanese/Frequencies.xlsx', data_only=True)
+    FrequencyWorkbook = openpyxl.load_workbook(filename=f'{Globals.MASTER_DIR}/Frequencies.xlsx', data_only=True)
     print("Finished loading Frequencies.xlsx")
     wsFrequencyWords = FrequencyWorkbook["Words"]
     Globals.clearSheet(FrequencyWorkbook, "WordsIndexed")
@@ -766,7 +770,7 @@ if prepare_frequency_db:
 
     # region Saving the results to xlsx & csv
     if update_workbooks:
-        FrequencyWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Frequencies.xlsx')
+        FrequencyWorkbook.save(filename=f'{Globals.MASTER_DIR}/Frequencies.xlsx')
 
     Globals.create_csv_from_worksheet(wsFrequencyWordsIndexed, name("FrequenciesIndexed"), idx("A"), idx("B"), False, 1)
     # endregion

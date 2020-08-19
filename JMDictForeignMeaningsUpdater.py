@@ -10,10 +10,8 @@ def main():
     current_entry = ''
 
     # region Preparations
-    localWordsWorkbook = openpyxl.load_workbook(
-        filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - MASTER.xlsx', data_only=True)
-    localVerbsWorkbook = openpyxl.load_workbook(
-        filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - MASTER.xlsx', data_only=True)
+    localWordsWorkbook = openpyxl.load_workbook(filename=f'{Globals.MASTER_DIR}/Grammar - 3000 kanji - MASTER.xlsx', data_only=True)
+    localVerbsWorkbook = openpyxl.load_workbook(filename=f'{Globals.MASTER_DIR}/Verbs - 3000 kanji - MASTER.xlsx', data_only=True)
     wsLocalMeanings = localWordsWorkbook["Meanings"]
     wsLocalMeaningsFR = localWordsWorkbook["MeaningsFR"]
     wsLocalMeaningsES = localWordsWorkbook["MeaningsES"]
@@ -236,5 +234,5 @@ def main():
     # endregion
 
     # Saving the results
-    localWordsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Grammar - 3000 kanji - with foreign.xlsx')
-    localVerbsWorkbook.save(filename='C:/Users/Bar/Dropbox/Japanese/Verbs - 3000 kanji - with foreign.xlsx')
+    localWordsWorkbook.save(filename=f'{Globals.OUTPUT_DIR}/Grammar - 3000 kanji - with foreign.xlsx')
+    localVerbsWorkbook.save(filename=f'{Globals.OUTPUT_DIR}/Verbs - 3000 kanji - with foreign.xlsx')

@@ -2,15 +2,15 @@ from os import listdir
 from os.path import isfile, join
 from pyexcel_ods3 import save_data
 from collections import OrderedDict
+import Globals
 
-ASSETS_PATH = r'C:\Projects\Workspace\JapaneseToolbox\app\src\main\assets'
 SQL_PATH = r'C:\Projects\Workspace\Web\JT database'
 MAX_CHUNK_LENGTH = 2500000
-lineFiles = [f for f in listdir(ASSETS_PATH) if isfile(join(ASSETS_PATH, f))]
+lineFiles = [f for f in listdir(Globals.JAPAGRAM_ASSETS_DIR) if isfile(join(Globals.JAPAGRAM_ASSETS_DIR, f))]
 
 data = OrderedDict()
 for lineFile in lineFiles:
-    fh = open(join(ASSETS_PATH, lineFile), 'r+', encoding='utf-8')
+    fh = open(join(Globals.JAPAGRAM_ASSETS_DIR, lineFile), 'r+', encoding='utf-8')
     content = fh.read()
     lines = content.split('\n')
     fh.close()
