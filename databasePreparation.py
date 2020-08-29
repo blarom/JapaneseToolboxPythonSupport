@@ -418,10 +418,10 @@ if prepare_conj_lengths:
     if update_workbooks:
         VerbsWorkbook.save(filename=f'{Globals.OUTPUT_DIR}/Verbs - 3000 kanji - ready for Japagram.xlsx')
 
-    Globals.create_csv_from_worksheet(wsLatinConj, name("LatinConj"), idx("A"), idx("GH"))
-    Globals.create_csv_from_worksheet(wsKanjiConj, name("KanjiConj"), idx("A"), idx("GH"))
-    Globals.create_csv_from_worksheet(wsVerbsLengths, name("VerbsLengths"), idx("A"), idx("GH"), False)
-    Globals.create_csv_from_worksheet(wsVerbsKanjiLengths, name("VerbsKanjiLengths"), idx("A"), idx("GH"), False)
+    Globals.create_csv_from_worksheet(wsLatinConj, name("LatinConj"), idx("A"), idx(Globals.MAX_VERB_CONG_COL))
+    Globals.create_csv_from_worksheet(wsKanjiConj, name("KanjiConj"), idx("A"), idx(Globals.MAX_VERB_CONG_COL))
+    Globals.create_csv_from_worksheet(wsVerbsLengths, name("VerbsLengths"), idx("A"), idx(Globals.MAX_VERB_CONG_COL), False)
+    Globals.create_csv_from_worksheet(wsVerbsKanjiLengths, name("VerbsKanjiLengths"), idx("A"), idx(Globals.MAX_VERB_CONG_COL), False)
     # endregion
 
 if prepare_extended_db: ExtendedDbCreator.main()
