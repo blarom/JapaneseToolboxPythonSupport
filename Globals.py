@@ -6,6 +6,7 @@ OUTPUT_DIR = 'C:/Projects/Workspace/JapaneseToolboxPythonSupport'
 JAPAGRAM_ASSETS_DIR = 'C:/Projects/Workspace/Japagram/app/src/main/assets'
 
 MAX_VERB_CONG_COL = "GI"
+DELIMITER = ";"
 
 TYPES_COL_INDEX = 1
 TYPES_COL_ROMAJI = 2

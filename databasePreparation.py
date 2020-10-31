@@ -96,7 +96,7 @@ if prepare_grammar_db:
     def cleanKeywords(keywords, lang):
         if lang == "latinEN":
             keywords = re.sub(r'(i\.e\. |e\.g\. |usu. )', '', keywords)
-            keywords = re.sub(r'(\(of |\(in )', ', ', keywords)
+            keywords = re.sub(r'(\(of |\(in )', Globals.DELIMITER, keywords)
         elif lang == "latinFR":
             keywords = re.sub(r'(c\.-à-d\. |ex\. |par ex\. |en part\. |norm\. |surt\. |surtout |spéc\. )', '', keywords)
         elif lang == "latinES":
@@ -213,19 +213,19 @@ if prepare_grammar_db:
                     else:
                         meaningsIndexes = str(current_worksheet.cell(rowIndex, meaningColPerLanguage[indexType]).value)
                         if not meaningsIndexes or meaningsIndexes is None: continue
-                        indexes = meaningsIndexes.split(';')
+                        indexes = meaningsIndexes.split(Globals.DELIMITER)
                         phrasesToIndex = [wsMeaningsPerLanguage[indexType].cell(row=int(index), column=Globals.MEANINGS_COL_MEANING).value for index in indexes if index.isdigit()]
                         value = current_worksheet.cell(row=rowIndex, column=kwColPerLanguage[indexType]).value
                         if value != '': phrasesToIndex.append(str(value))
 
-                    currentKeywords = ', '.join([str(item) for item in phrasesToIndex]).lower()
+                    currentKeywords = Globals.DELIMITER.join([str(item) for item in phrasesToIndex]).lower()
                     currentKeywordsClean = cleanKeywords(currentKeywords, indexType)
 
                     # Separating the keywords into different keyword sections to limit the length of index substrings, thereby limiting the total index size
                     keywordSections = []
                     cumulativeWords = []
-                    for phrase in currentKeywordsClean.split(','):
-                        words = phrase.strip().split(' ')
+                    for phrase in currentKeywordsClean.split(Globals.DELIMITER):
+                        words = phrase.strip()
                         for i in range(len(words)):
                             if not cumulativeWords:
                                 cumulativeWords.append(words[i])
@@ -291,13 +291,13 @@ if prepare_grammar_db:
             for i in range(len(sortedSectionSubstrings)):
                 if i % 20000 == 0: print(f'Updated {indexType} sorted index - item {i}/{len(sortedSectionSubstrings)}')
                 wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=1).value = sortedSectionSubstrings[i]
-                wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=2).value = ';'.join(sorted(list(set(SECTIONS_DICT[indexType][sortedSectionSubstrings[i]]))))
+                wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=2).value = Globals.DELIMITER.join(sorted(list(set(SECTIONS_DICT[indexType][sortedSectionSubstrings[i]]))))
                 wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=3).value = Globals.convert_to_utf8(sortedSectionSubstrings[i]).upper()
         else:
             for i in range(len(sortedSectionSubstrings)):
                 if i % 10000 == 0: print(f'Updated {indexType} sorted index - item {i}/{len(sortedSectionSubstrings)}')
                 wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=1).value = sortedSectionSubstrings[i].replace("@@@@@@@@", '')
-                wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=2).value = ';'.join(sorted(list(set(SECTIONS_DICT[indexType][sortedSectionSubstrings[i]]))))
+                wsSortedIndexPerLanguage[indexType].cell(row=i + 1, column=2).value = Globals.DELIMITER.join(sorted(list(set(SECTIONS_DICT[indexType][sortedSectionSubstrings[i]]))))
     # endregion
 
     # region Saving the results to xlsx & csv
@@ -481,16 +481,16 @@ if prepare_kanji_db:
 
     def Recursive_Decomposition(line_key):
         if line_key not in decompositions or not decompositions[line_key][DECOMPOSITION]: return []
-        line_decompositions = decompositions[line_key][DECOMPOSITION].split(";")
+        line_decompositions = decompositions[line_key][DECOMPOSITION].split(Globals.DELIMITER)
         current_full_decomposition = []
-        for element in line_decompositions:
-            if not element: continue
-            if element.isdigit():
-                current_full_decomposition += Recursive_Decomposition(element)
+        for item in line_decompositions:
+            if not item: continue
+            if item.isdigit():
+                current_full_decomposition += Recursive_Decomposition(item)
             else:
-                current_full_decomposition.append(element)
-                if element not in radicals_not_to_decompose:
-                    current_full_decomposition += Recursive_Decomposition(element)
+                current_full_decomposition.append(item)
+                if item not in radicals_not_to_decompose:
+                    current_full_decomposition += Recursive_Decomposition(item)
         return current_full_decomposition
 
 
@@ -610,7 +610,7 @@ if prepare_kanji_db:
 
         if decompositions[key][STRUCTURE] not in struct_map: continue
         struct = struct_map[decompositions[key][STRUCTURE]]
-        elements = decompositions[key][DECOMPOSITION].split(";")
+        elements = decompositions[key][DECOMPOSITION].split(Globals.DELIMITER)
         if struct[-3:] == 'out':
             element = elements[0]
             compts_by_struct[struct][element] = (compts_by_struct[struct][element] + key) if element in compts_by_struct[struct].keys() else key
@@ -693,7 +693,7 @@ if prepare_conj_db:
         latinRoots = [root if root else ""]
         root = wsVerbsForGrammar.cell(row=row, column=Globals.TYPES_COL_KANJI_ROOT).value
         kanjiRoots = [root if root else ""]
-        for item in alt_spellings.split(','):
+        for item in alt_spellings.split(Globals.DELIMITER):
             if not item: continue
             if Globals.is_latin(item):
                 latinRoots.append(Globals.get_root_from_masu_stem_latin(item, conj_family))
@@ -728,11 +728,11 @@ if prepare_conj_db:
     sorted_keys = sorted(latinConjIndex.keys())
     for i in range(0, len(sorted_keys)):
         wsLatinConjIndex.cell(row=i + 1, column=1).value = sorted_keys[i]
-        wsLatinConjIndex.cell(row=i + 1, column=2).value = ';'.join(latinConjIndex[sorted_keys[i]])
+        wsLatinConjIndex.cell(row=i + 1, column=2).value = Globals.DELIMITER.join(latinConjIndex[sorted_keys[i]])
     sorted_keys = sorted(kanjiConjIndex.keys())
     for i in range(0, len(sorted_keys)):
         wsKanjiConjIndex.cell(row=i + 1, column=1).value = sorted_keys[i]
-        wsKanjiConjIndex.cell(row=i + 1, column=2).value = ';'.join(kanjiConjIndex[sorted_keys[i]])
+        wsKanjiConjIndex.cell(row=i + 1, column=2).value = Globals.DELIMITER.join(kanjiConjIndex[sorted_keys[i]])
     # endregion
 
     # region Saving the results to xlsx & csv
