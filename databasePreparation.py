@@ -128,15 +128,15 @@ if prepare_grammar_db:
         return (text.isdigit() or text.replace("'", '').isdigit()) and not any(character in "０１２３４５６７８９" for character in text)
 
 
-    def addRunningIndexToSectionsDict(idxType, text, idx):
+    def addRunningIndexToSectionsDict(idx_type, text, idx_local):
         if not text: return
         global SECTIONS_DICT
-        if text in SECTIONS_DICT[idxType].keys():
-            indexes = SECTIONS_DICT[idxType][text]
-            indexes.append(idx)
-            SECTIONS_DICT[idxType][text] = indexes
+        if text in SECTIONS_DICT[idx_type].keys():
+            indexes_local = SECTIONS_DICT[idx_type][text]
+            indexes_local.append(idx_local)
+            SECTIONS_DICT[idx_type][text] = indexes_local
         else:
-            SECTIONS_DICT[idxType][text] = [idx]
+            SECTIONS_DICT[idx_type][text] = [idx_local]
 
 
     # endregion
@@ -187,9 +187,13 @@ if prepare_grammar_db:
     # region Creating the index dicts and updating the worksheets
     for indexType in SECTIONS_DICT.keys():
         for current_worksheet in [wsTypes, wsGrammar, wsVerbsForGrammar]:
+
             rowIndex = 2
             modulus = (20000 if current_worksheet != wsGrammar else 200)
             while not Globals.isLastRow(current_worksheet, rowIndex):
+
+                if 'teniir' in current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ROMAJI).value:
+                    a = 1
                 runningIndex = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_INDEX).value
                 if rowIndex % modulus == 0: print(f"Creating {indexType} Index for {current_worksheet} - row {rowIndex}")
                 if Globals.isIrrelevantRow(current_worksheet, rowIndex): continue
@@ -197,26 +201,26 @@ if prepare_grammar_db:
                     if indexType == "kanji":
                         phrasesToIndex = []
                         value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_KANJI).value
-                        if value != '': phrasesToIndex.append(str(value))
+                        if value: phrasesToIndex.append(str(value))
                         value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_KW_JAP).value
-                        if value != '': phrasesToIndex.append(str(value))
+                        if value: phrasesToIndex.append(str(value))
                         value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ALTS).value
-                        if value != '': phrasesToIndex.append(str(value))
+                        if value: phrasesToIndex.append(str(value))
                     elif indexType == "romaji":
                         phrasesToIndex = []
                         value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ROMAJI).value
-                        if value != '': phrasesToIndex.append(str(value))
+                        if value: phrasesToIndex.append(str(value))
                         value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_KW_JAP).value
-                        if value != '': phrasesToIndex.append(str(value))
+                        if value: phrasesToIndex.append(str(value))
                         value = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ALTS).value
-                        if value != '': phrasesToIndex.append(str(value))
+                        if value: phrasesToIndex.append(str(value))
                     else:
                         meaningsIndexes = str(current_worksheet.cell(rowIndex, meaningColPerLanguage[indexType]).value)
                         if not meaningsIndexes or meaningsIndexes is None: continue
                         indexes = meaningsIndexes.split(Globals.DELIMITER)
                         phrasesToIndex = [wsMeaningsPerLanguage[indexType].cell(row=int(index), column=Globals.MEANINGS_COL_MEANING).value for index in indexes if index.isdigit()]
                         value = current_worksheet.cell(row=rowIndex, column=kwColPerLanguage[indexType]).value
-                        if value != '': phrasesToIndex.append(str(value))
+                        if value: phrasesToIndex.append(str(value))
 
                     currentKeywords = Globals.DELIMITER.join([str(item) for item in phrasesToIndex]).lower()
                     currentKeywordsClean = cleanKeywords(currentKeywords, indexType)
@@ -225,7 +229,7 @@ if prepare_grammar_db:
                     keywordSections = []
                     cumulativeWords = []
                     for phrase in currentKeywordsClean.split(Globals.DELIMITER):
-                        words = phrase.strip()
+                        words = phrase.strip().split(' ')
                         for i in range(len(words)):
                             if not cumulativeWords:
                                 cumulativeWords.append(words[i])
