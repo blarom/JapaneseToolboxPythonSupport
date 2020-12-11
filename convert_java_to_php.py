@@ -27,6 +27,7 @@ REPLACEMENT_FUNCTIONS = {
     'toString': ['implode("", ', 'caller', ')'],
     'size': ['sizeof(', 'caller', ')'],
     'get': ['caller', '[', 'arguments', ']'],
+    'printStackTrace': ['echo \'Caught exception: \', ', 'caller', '->getMessage(), \'\\n\''],
 }
 REPLACEMENT_FUNCTIONS_NO_PARENTHESES = {
     'length': ['sizeof(', 'caller', ')'],
@@ -42,6 +43,41 @@ def write_to_file(rwa, filename, content):
     fh = open(filename, rwa, encoding="utf8")
     fh.write(content)
     fh.close()
+
+
+def find_complementary_char_index(requested_char, start_index, direction, text):
+    increment = -1 if direction == 'left' else 1
+    is_in_double_quotes = False
+    is_in_single_quotes = False
+    num_open_parentheses = 0
+    num_open_curly = 0
+    num_open_square = 0
+    for index in range(start_index, len(text)):
+        is_escaped = index > 1 and text[index - 1] == '\\'
+        if not is_escaped and text[index] == '"':
+            is_in_double_quotes = not is_in_double_quotes
+        if not is_escaped and text[index] == '\'':
+            is_in_single_quotes = not is_in_single_quotes
+        if not is_in_double_quotes and not is_in_single_quotes and text[index] == '(':
+            num_open_parentheses += increment
+        if not is_in_double_quotes and not is_in_single_quotes and text[index] == ')':
+            num_open_parentheses -= increment
+        if not is_in_double_quotes and not is_in_single_quotes and text[index] == '{':
+            num_open_curly += increment
+        if not is_in_double_quotes and not is_in_single_quotes and text[index] == '}':
+            num_open_curly -= increment
+        if not is_in_double_quotes and not is_in_single_quotes and text[index] == '[':
+            num_open_square += increment
+        if not is_in_double_quotes and not is_in_single_quotes and text[index] == ']':
+            num_open_square -= increment
+        if text[index] == requested_char and \
+                not is_in_double_quotes and \
+                not is_in_single_quotes and \
+                num_open_parentheses == 0 and \
+                num_open_curly == 0 and \
+                num_open_square == 0:
+            return index
+    return -1
 
 
 def get_caller_start_position(end_index, text):
@@ -68,10 +104,11 @@ def get_caller_start_position(end_index, text):
                 and not is_open_single_quote \
                 and not is_open_double_quote \
                 and not is_field_call:
+            index += 1
             break
         else:
             index -= 1
-    return index + 1
+    return index
 
 
 def get_closing_parenthesis_position(start_index, text):
@@ -101,7 +138,6 @@ def get_closing_parenthesis_position(start_index, text):
 def convert_caller_and_arguments(text, last_line_caller):
     text_converted = text
     is_no_match = 1000000
-
     for replacement_functions in [REPLACEMENT_FUNCTIONS, REPLACEMENT_FUNCTIONS_NO_PARENTHESES]:
         len_text_converted_last = 0
         while len(text_converted) != len_text_converted_last:
@@ -117,7 +153,7 @@ def convert_caller_and_arguments(text, last_line_caller):
             match_position = ordered_java_functions[0][1]
 
             if match_position == is_no_match:
-                return text_converted
+                break
 
             if last_line_caller and re.search(r'^\s*\.\w+', text_converted):
                 caller_start_position = match_position
@@ -152,22 +188,7 @@ def convert_caller_and_arguments(text, last_line_caller):
                 elif item == 'arguments':
                     if java_function == 'replace' or java_function == 'replaceAll':
                         arguments_converted = f'"{chosen_preg_replace_key}"+' + arguments_converted
-                        arguments_separator_comma_index = 0
-                        is_in_double_quotes = False
-                        is_in_single_quotes = False
-                        num_open_parentheses = 0
-                        for index in range(len(arguments_converted)):
-                            is_escaped = index > 1 and arguments_converted[index - 1] == '\\'
-                            if not is_escaped and arguments_converted[index] == '"':
-                                is_in_double_quotes = not is_in_double_quotes
-                            if not is_escaped and arguments_converted[index] == '\'':
-                                is_in_single_quotes = not is_in_single_quotes
-                            if not is_in_double_quotes and not is_in_single_quotes and arguments_converted[index] == '(':
-                                num_open_parentheses += 1
-                            if not is_in_double_quotes and not is_in_single_quotes and arguments_converted[index] == ')':
-                                num_open_parentheses -= 1
-                            if arguments_converted[index] == ',' and not is_in_double_quotes and not is_in_single_quotes and num_open_parentheses == 0:
-                                arguments_separator_comma_index = index
+                        arguments_separator_comma_index = find_complementary_char_index(',', 0, 'right', arguments_converted)
                         arguments_converted_pre = arguments_converted[:arguments_separator_comma_index]
                         arguments_converted_mid = f'+"{chosen_preg_replace_key}"'
                         arguments_converted_post = arguments_converted[arguments_separator_comma_index:]
@@ -188,7 +209,7 @@ def main():
 
     last_line_caller = ''
     for java_name in java_files:
-        if 'UtilitiesVerbSearch' not in java_name: continue
+        # if 'UtilitiesVerbSearch' not in java_name: continue
         content = get_file_contents(f'{PATH_UTILITIES_CROSS_PLATFORM}/{java_name}')
 
         content_new = []
@@ -236,8 +257,6 @@ def main():
             line_new = re.sub(r'Utilities\w+\.', '', line_new)
             line_new = re.sub(r'Globals\.', '', line_new)
 
-            if 'context, String language) {' in line_old:
-                a = 1
             # function instantiations
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|float|double|[A-Z][\w.]+<*\S*>*)'
@@ -248,18 +267,23 @@ def main():
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|float|double|[A-Z][\w.]+<*\S*>*)'
                               r'\[*\]*\[*\]*\[*\]*'
-                              r'\s*(\w+\s*\(.+,)\s*$',
-                              r'\g<1>function \g<7>', line_new)
+                              r'\s*(\w+\s*\()\s*\S+\s+(\S+\s*,)',
+                              r'\g<1>function \g<7>\g<8>', line_new)
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|float|double|[A-Z][\w.]+<*\S*>*)'
                               r'\[*\]*\[*\]*\[*\]*'
                               r'\s*(\w+\s*\()\s*$',
                               r'\g<1>function \g<7>', line_new)
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
-                              r'HashMap<.+>'
+                              r'HashMap<.+?>'
                               r'\s*(\w+\s*\(.*\))'
                               r'\s*{\s*$',
                               r'\g<1>function \g<6> {', line_new)
+            if 'function ' in line_new:
+                line_new = re.sub(r'(function\s*\w+\s*\()\s*\S+\s+(\S+\s*)([,)])',
+                                  r'\g<1>\g<2>\g<3>', line_new)
+                line_new = re.sub(r',\s*\S+\s+(\S+)\s*([,)])',
+                                  r', \g<1>\g<2>', line_new)
 
             # variable instantiations
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
@@ -267,50 +291,76 @@ def main():
                               r'\[*\]*\[*\]*\[*\]*\s+(\w+)(\s*=\s*)(.+)$',
                               r'\g<1>\g<7>\g<8>\g<9>', line_new)
             line_new = re.sub(r'^(\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'\[*\]*\[*\]*\[*\]*\s+(\w+)\s*[),]',
-                              r'\g<1>\g<3>,', line_new)
+                              r'\[*\]*\[*\]*\[*\]*\s+(\w+)\s*([),])',
+                              r'\g<1>\g<3>\g<4>', line_new)
+            line_new = re.sub(r'(,\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
+                              r'\[*\]*\[*\]*\[*\]*\s+(\w+)\s*([),])',
+                              r'\g<1>\g<3>\g<4>', line_new)
             line_new = re.sub(r'^(\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
                               r'\[*\]*\[*\]*\[*\]*\s+(\w+)\s*;',
                               r'', line_new)
 
+            # constructs
+            line_new = re.sub(r'for\s*\(\s*\S+\s+(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
+            line_new = re.sub(r'for\s*\(\s*(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
+            line_new = re.sub(r'else if', 'elseif', line_new)
+
             # array instantiations
-            if re.search(r'new [A-Z][\w.]+\[\]\[\]\s*{\s*$', line_new):
-                line_new = re.sub(r'new [\w.]+\[\]\[*\]*\[*\]*\s*{\s*$', r'array(', line_new)
-            line_new = re.sub(r'new [\w.]+\[\]\[\]{(.+?)}', r'array(\g<1>)', line_new)
-            line_new = re.sub(r'new [\w.]+\[\]{\s*$', r'array(', line_new)
-            line_new = re.sub(r'new [\w.]+\[\]{(.+?)}', r'array(\g<1>)', line_new)
-            line_new = re.sub(r'new [\w.]+\[\d+\]\s*;', r'array();', line_new)
+            if re.search(r'new [A-Z][\w.]+\[[^]]', line_new):
+                square_index = 0
+                complementary_square_index = 0
+                array_sizes = []
+                while square_index != -1 and complementary_square_index >= square_index:
+                    match_instantiation = re.search(r'new [A-Z][\w.]+\[', line_new)
+                    if not match_instantiation: break
+                    instantiation_start_index = match_instantiation.start()
+                    array_filler = 0
+                    if 'new String' in match_instantiation.group(0): array_filler = '""'
+                    if re.search(r'(Array|Map|List)', match_instantiation.group(0)): array_filler = 'array()'
+
+                    complementary_square_index = match_instantiation.end()-1
+                    while square_index != -1 and complementary_square_index >= square_index:
+                        square_index = line_new.find('[', complementary_square_index)
+                        if square_index == -1: break
+                        complementary_square_index = find_complementary_char_index(']', square_index, 'right', line_new)
+                        if complementary_square_index == -1: break
+                        array_sizes.append(line_new[square_index+1:complementary_square_index])
+
+                    if array_sizes and (complementary_square_index == -1 or not re.search(r'^\s*\[', line_new[complementary_square_index+1:])):
+                        replacement = array_filler
+                        for i in range(len(array_sizes)):
+                            replacement = f'array_fill(0, {array_sizes[i]}, {replacement})'
+                        line_new = line_new[:instantiation_start_index] + replacement + line_new[complementary_square_index+1:]
+                        array_sizes = []
+
+            line_new = re.sub(r'Arrays.fill\(\s*([^,]+)\s*,\s*([^,]+)\s*\)', r'\g<1> = array_fill(0, sizeof(\g<1>), \g<2>)', line_new)
+            line_new = re.sub(r'Arrays.copyOf\(\s*([^,]+)\s*,\s*([^,]+)\s*\)', r'array_slice(\g<1>, 0, \g<2>)', line_new)
+
+            if 'new' in line_new:
+                if re.search(r'new [A-Z][\w.]+\[\]\[\]\s*{\s*$', line_new):
+                    line_new = re.sub(r'new [\w.]+\[\]\[*\]*\[*\]*\s*{\s*$', r'array(', line_new)
+                line_new = re.sub(r'new [\w.]+\[\]\[\]{(.+?)}', r'array(\g<1>)', line_new)
+                line_new = re.sub(r'new [\w.]+\[\]{\s*$', r'array(', line_new)
+                line_new = re.sub(r'new [\w.]+\[\]{(.+?)}', r'array(\g<1>)', line_new)
+                line_new = re.sub(r'new [\w.]+\[\d+\]\s*;', r'array();', line_new)
+                line_new = re.sub(r'new ArrayList<>\(([^,)]+?)\)', r'\g<1>', line_new)
+                line_new = re.sub(r'new (ArrayList<>|HashMap<>|StringBuilder)', 'array', line_new)
+
             line_new = re.sub(r'};', r');', line_new)
-            line_new = re.sub(r'new ArrayList<>\(([^,)]+?)\)', r'\g<1>', line_new)
-            line_new = re.sub(r'new (ArrayList<>|HashMap<>|StringBuilder)', 'array', line_new)
             line_new = re.sub(r'([^.\s]+)\.put\(([^,]+),([^,]+)\)', r'\g<1>[\g<2>] = \g<3>', line_new)
 
-            match_potential_one_line_array = re.search(r'{.+}', line_new)
-            if match_potential_one_line_array:
-                is_escaped = False
-                is_string_quote = False
-                is_char_quote = False
-                new_line = ''
-                for char in list(line_new):
-                    if char == '{' and not (is_char_quote or is_string_quote):
-                        new_line += 'array('
-                    elif char == '}' and not (is_char_quote or is_string_quote):
-                        new_line += ')'
-                    elif char == '"' and not is_string_quote and not is_escaped:
-                        is_string_quote = True
-                        new_line += char
-                    elif char == '\'' and not is_char_quote:
-                        is_char_quote = True
-                        new_line += char
-                    elif char == '\\' and is_string_quote:
-                        is_escaped = True
-                        new_line += char
-                    elif char == '"' and is_string_quote and not is_escaped:
-                        is_string_quote = False
-                        new_line += char
-                    else:
-                        new_line += char
-                line_new = new_line
+            if '{' in line_new:
+                curly_index = 0
+                complementary_square_index = 0
+                while curly_index != -1 and complementary_square_index >= curly_index:
+                    curly_index = line_new[complementary_square_index:].find('{')
+                    if curly_index == -1: break
+                    complementary_square_index = find_complementary_char_index('}', curly_index, 'right', line_new)
+                    if complementary_square_index == -1: break
+
+                    is_array_size = not re.search(r'\)\s*$', line_new[:curly_index])
+                    if is_array_size:
+                        line_new = line_new[:curly_index] + 'array(' + line_new[curly_index+1:complementary_square_index] + ')' + line_new[complementary_square_index+1:]
 
             # java objects & getters/setters/is
             # line_new = re.sub(r'\b(List<[^>]+>|List<List<[^>]+>>|List<List<List<[^>]+>>>|int|long|char|boolean|long|[A-Z][a-z][\w.]+)\[*\]*\[*\]*\s+', '', line_new)
@@ -323,11 +373,6 @@ def main():
                 line_new = re.sub(r'\.set(\w+)\(\)', lambda match: f'->{match.group(1)[0].lower() + match.group(1)[1:]}', line_new)
 
             line_new = re.sub(r'\.(is\w+)\(\)', r'->\g<1>', line_new)
-
-            # constructs
-            line_new = re.sub(r'for\s*\(\s*\S+\s+(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
-            line_new = re.sub(r'for\s*\(\s*(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
-            line_new = re.sub(r'else if', 'elseif', line_new)
 
             # object manipulations
             # line_new = re.sub(r'([\w$]+)\.length\b[^(]', r'sizeof(\g<1>)', line_new)
@@ -383,19 +428,20 @@ def main():
                 line_parts = line_new.split('"')
                 is_in_quotes = False
                 new_line_parts = []
-                for line_part in line_parts:
+                for i in range(len(line_parts)):
                     if not is_in_quotes:
-                        new_line_parts.append(add_dollar(line_part))
+                        new_line_parts.append(add_dollar(line_parts[i]))
                     else:
-                        new_line_parts.append(line_part)
-                    if len(line_part) > 0 and line_part[-1] != '\\':
+                        new_line_parts.append(line_parts[i])
+                    if i > 1 and len(line_parts[i-1]) > 0 and line_parts[i-1][-1] != '\\':
                         is_in_quotes = not is_in_quotes
                 line_new = '"'.join(new_line_parts)
 
-            line_new = re.sub(r'\$(null|return|true|false|default|new|continue'
-                              r'|contains|array|array_push|array_slice|array_key_exists'
+            line_new = re.sub(r'\$(null|return|true|false|default|new|continue|try|catch|finally|echo'
+                              r'|contains|array|array_push|array_slice|array_fill|array_key_exists'
                               r'|substr|mb_substr|mb_strlen|preg_replace|trim|strtolower|strtoupper|sizeof'
                               r'|explode|implode)\b', r'\g<1>', line_new)
+            line_new = re.sub(r'catch\s*\((\$[a-z])', r'catch (Exception \g<1>', line_new)
 
             # removing extra empty lines
             if line_new or last_line: content_new.append(line_new)
