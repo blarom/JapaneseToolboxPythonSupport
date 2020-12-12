@@ -8,21 +8,23 @@ PATH_UTILITIES_OVERRIDABLE = 'C:/Projects/Workspace/Japagram/app/src/main/java/c
 PATH_PHP = 'C:/Projects/Workspace/Web/Java2PhpFiles'
 
 REPLACEMENT_FUNCTIONS = {
-    'addAll': ['array_push(', 'caller', ', ', 'arguments', ')'],
+    'addAll': ['array_merge(', 'caller', ', ', 'arguments', ')'],
     'add': ['array_push(', 'caller', ', ', 'arguments', ')'],
+    'startsWith': ['startsWith(', 'caller', ', ', 'arguments', ')'],
+    'endsWith': ['endsWith(', 'caller', ', ', 'arguments', ')'],
     'append': ['array_push(', 'caller', ', ', 'arguments', ')'],
     'replaceAll': ['preg_replace(', 'arguments', ', ', 'caller', ')'],
     'replace': ['preg_replace(', 'arguments', ', ', 'caller', ')'],
     'subList': ['array_slice(', 'caller', ', ', 'arguments', ')'],
     'contains': ['contains(', 'caller', ', ', 'arguments', ')'],
     'containsKey': ['array_key_exists(', 'arguments', ', ', 'caller', ')'],
-    'substring': ['mb_substr(', 'caller', ', ', 'arguments', ')'],
+    'substring': ['mb_substr(', 'caller', ', ', 'arguments', ', \'UTF-8\')'],
     'charAt': ['caller', '[', 'arguments', ']'],
     'equals': ['(', 'caller', ' == ', 'arguments', ')'],
     'split': ['explode(', 'arguments', ', ', 'caller', ')'],
     'trim': ['trim(', 'caller', ')'],
     'keySet': ['array_keys(', 'caller', ')'],
-    'length': ['mb_strlen(', 'caller', ')'],
+    'length': ['mb_strlen(', 'caller', ', \'UTF-8\')'],
     'toLowerCase': ['strtolower(', 'caller', ')'],
     'toUpperCase': ['strtoupper(', 'caller', ')'],
     'toString': ['implode("", ', 'caller', ')'],
@@ -332,24 +334,31 @@ def main():
                 line_new = re.sub(r',\s*\S+\s+(\S+)\s*([,)])',
                                   r', \g<1>\g<2>', line_new)
 
+            if 'conjugationTitle.setTitle(OverridableUtilitiesResources.getString(titleRef, context, Globals.RESOURCE_MAP_VERB_CONJ_TITLES, language));' in line_old:
+                a=1
             # variable instantiations
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|char|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'\[*]*\[*]*\[*]*\s+(\w+)(\s*=\s*)(.+)$',
+                              r'\[*]*\[*]*\[*]*\s+([\w.]+)(\s*=\s*)(.+)$',
                               r'\g<1>\g<7>\g<8>\g<9>', line_new)
             line_new = re.sub(r'^(\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'\[*]*\[*]*\[*]*\s+(\w+)\s*([),])',
+                              r'\[*]*\[*]*\[*]*\s+([\w.]+)\s*([),])',
                               r'\g<1>\g<3>\g<4>', line_new)
             line_new = re.sub(r'(,\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'\[*]*\[*]*\[*]*\s+(\w+)\s*([),])',
-                              r'\g<1>\g<3>\g<4>', line_new)
+                              r'\[*]*\[*]*\[*]*\s+([\w.]+)\s*,',
+                              r'\g<1>\g<3>,', line_new)
+            line_new = re.sub(r'(,\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*[^,]+>*)'
+                              r'\[*]*\[*]*\[*]*\s+([\w.]+)\s*\)',
+                              r'\g<1>\g<3>)', line_new)
+            line_new = re.sub(r'(,\s*)(HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
+                              r'\[*]*\[*]*\[*]*\s+([\w.]+)\s*\)',
+                              r'\g<1>\g<3>)', line_new)
             line_new = re.sub(r'^(\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>)'
-                              r'\[*]*\[*]*\[*]*\s+(\w+)\s*;',
+                              r'\[*]*\[*]*\[*]*\s+([\w.]+)\s*;',
                               r'', line_new)
             line_new = re.sub(r'^(\s*)(HashMap<\s*[\w.\[\]<>]+\s*,\s*[\w.\[\]<>]+\s*>)'
                               r'\s+(\w+\s*)',
                               r'\g<1>\g<3>', line_new)
-
             # globals
             line_new = re.sub(r'^(\s*)([A-Z0-9_]+)\s*=\s*(.+);', r"\g<1>define('\g<2>', \g<3>);", line_new)
             match_global_open = re.search(r'^\s*([A-Z0-9_]+)\s*=\s*(.+)', line_new)
@@ -364,6 +373,7 @@ def main():
             line_new = re.sub(r"\"\$GLOBALS\['([A-Z][A-Z0-9_]+)']\"", r'"\g<1>"', line_new)
             # line_new = re.sub(r'Globals\.([A-Z0-9_]+)', r"$GLOBALS['\g<1>']", line_new)
             line_new = re.sub(r'Globals\.', r"", line_new)
+            line_new = re.sub(r"\[\$GLOBALS\['([A-Z][A-Z0-9_]+)']]", r'[\g<1>]', line_new)
 
             # constructs
             line_new = re.sub(r'for\s*\(\s*\S+\s+(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
@@ -403,6 +413,7 @@ def main():
             line_new = re.sub(r'Arrays.copyOf\(\s*([^,]+)\s*,\s*([^,]+)\s*\)', r'array_slice(\g<1>, 0, \g<2>)', line_new)
 
             if 'new' in line_new:
+                line_new = re.sub(r'new LinkedHashSet<>', r'removeDuplicatesInArray', line_new)
                 if re.search(r'new [A-Z][\w.]+\[]\[]\s*{\s*$', line_new):
                     line_new = re.sub(r'new [\w.]+\[]\[*]*\[*]*\s*{\s*$', r'array(', line_new)
                 line_new = re.sub(r'new [\w.]+\[]\[]\s*{(.+?)}', r'array(\g<1>)', line_new)
