@@ -4,6 +4,7 @@ from os import listdir
 from os.path import isfile, join
 
 PATH_UTILITIES_CROSS_PLATFORM = 'C:/Projects/Workspace/Japagram/app/src/main/java/com/japagram/utilitiesCrossPlatform'
+PATH_UTILITIES_OVERRIDABLE = 'C:/Projects/Workspace/Japagram/app/src/main/java/com/japagram/utilitiesPlatformOverridable'
 PATH_PHP = 'C:/Projects/Workspace/Web/Java2PhpFiles'
 
 REPLACEMENT_FUNCTIONS = {
@@ -16,7 +17,7 @@ REPLACEMENT_FUNCTIONS = {
     'contains': ['contains(', 'caller', ', ', 'arguments', ')'],
     'containsKey': ['array_key_exists(', 'arguments', ', ', 'caller', ')'],
     'substring': ['mb_substr(', 'caller', ', ', 'arguments', ')'],
-    'charAt': ['mb_substr(', 'caller', ', ', 'arguments', ' + 1)'],
+    'charAt': ['caller', '[', 'arguments', ']'],
     'equals': ['(', 'caller', ' == ', 'arguments', ')'],
     'split': ['explode(', 'arguments', ', ', 'caller', ')'],
     'trim': ['trim(', 'caller', ')'],
@@ -268,7 +269,7 @@ def main():
 
             match_instantiation_no_val = re.search(r'^\s*(public |private |)(final |)(static |)(final |)'
                                                    r'(int|boolean|long|float|double|[A-Z][\w.]+<*\S*>*)'
-                                                   r'\[*\]*\[*\]*\[*\]*'
+                                                   r'\[*]*\[*]*\[*]*'
                                                    r'\s+\w+\s*;\s*$', line_old)
             if match_instantiation_no_val:
                 continue
@@ -289,12 +290,14 @@ def main():
             line_new = line_old
 
             # java keywords cleaning
-            line_new = re.sub(r' @NotNull \[\]', '[]', line_new)
+            line_new = re.sub(r' @NotNull \[]', '[]', line_new)
             line_new = re.sub(r'@NotNull\s+', '', line_new)
             line_new = re.sub(r'@SuppressWarnings\(.+?\)', '', line_new)
+            line_new = re.sub(r"\(\s*int\s*\)\s*(\w+.charAt\(\d+\))", r"ord(\g<1>)", line_new)
+            line_new = re.sub(r"\(\s*int\s*\)\s*'(\w)'", r"ord('\g<1>')", line_new)
             line_new = re.sub(r'\(\s*(int|String|List)(|<[\w<>]+>)\s*\)\s*', '', line_new)
-            line_new = re.sub(r'\b([\d]+)\.f\b', '\g<1>.0', line_new)
-            line_new = re.sub(r'\b([\d.]+)\.f\b', '\g<1>', line_new)
+            line_new = re.sub(r'\b([\d]+)\.f\b', r'\g<1>.0', line_new)
+            line_new = re.sub(r'\b([\d.]+)\.f\b', r'\g<1>', line_new)
 
             # application-specific keywords
             line_new = re.sub(r'OverridableUtilitiesGeneral.joinList', 'implode', line_new)
@@ -304,18 +307,18 @@ def main():
             # function instantiations
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|float|double|[A-Z][\w.]+<*\S*>*)'
-                              r'\[*\]*\[*\]*\[*\]*'
+                              r'\[*]*\[*]*\[*]*'
                               r'\s*(\w+\s*\(.*\))'
                               r'\s*{\s*$',
                               r'\g<1>function \g<7> {', line_new)
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|float|double|[A-Z][\w.]+<*\S*>*)'
-                              r'\[*\]*\[*\]*\[*\]*'
+                              r'[*]*[*]*[*]*'
                               r'\s*(\w+\s*\()\s*\S+\s+(\S+\s*,)',
                               r'\g<1>function \g<7>\g<8>', line_new)
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|float|double|[A-Z][\w.]+<*\S*>*)'
-                              r'\[*\]*\[*\]*\[*\]*'
+                              r'[*]*[*]*[*]*'
                               r'\s*(\w+\s*\()\s*$',
                               r'\g<1>function \g<7>', line_new)
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
@@ -332,16 +335,16 @@ def main():
             # variable instantiations
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|char|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'\[*\]*\[*\]*\[*\]*\s+(\w+)(\s*=\s*)(.+)$',
+                              r'[*]*[*]*[*]*\s+(\w+)(\s*=\s*)(.+)$',
                               r'\g<1>\g<7>\g<8>\g<9>', line_new)
             line_new = re.sub(r'^(\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'\[*\]*\[*\]*\[*\]*\s+(\w+)\s*([),])',
+                              r'[*]*[*]*[*]*\s+(\w+)\s*([),])',
                               r'\g<1>\g<3>\g<4>', line_new)
             line_new = re.sub(r'(,\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'\[*\]*\[*\]*\[*\]*\s+(\w+)\s*([),])',
+                              r'[*]*[*]*[*]*\s+(\w+)\s*([),])',
                               r'\g<1>\g<3>\g<4>', line_new)
             line_new = re.sub(r'^(\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>)'
-                              r'\[*\]*\[*\]*\[*\]*\s+(\w+)\s*;',
+                              r'[*]*[*]*[*]*\s+(\w+)\s*;',
                               r'', line_new)
             line_new = re.sub(r'^(\s*)(HashMap<\s*[\w.\[\]<>]+\s*,\s*[\w.\[\]<>]+\s*>)'
                               r'\s+(\w+\s*)',
@@ -357,58 +360,58 @@ def main():
                 line_new = re.sub(r'}\s*;', r"));", line_new)
                 is_open_global = False
             line_new = re.sub(r'([^\w\s]\s*)(\b[A-Z][A-Z0-9_]+\b)', r"\g<1>$GLOBALS['\g<2>']", line_new)
-            line_new = re.sub(r"^(\s*define\()'\$GLOBALS\['([A-Z][A-Z0-9_]+)'\]'", r"\g<1>\g<2>", line_new)
-            line_new = re.sub(r"\"\$GLOBALS\['([A-Z][A-Z0-9_]+)'\]\"", r'"\g<1>"', line_new)
+            line_new = re.sub(r"^(\s*define\()'\$GLOBALS\['([A-Z][A-Z0-9_]+)']'", r"\g<1>\g<2>", line_new)
+            line_new = re.sub(r"\"\$GLOBALS\['([A-Z][A-Z0-9_]+)']\"", r'"\g<1>"', line_new)
             # line_new = re.sub(r'Globals\.([A-Z0-9_]+)', r"$GLOBALS['\g<1>']", line_new)
             line_new = re.sub(r'Globals\.', r"", line_new)
-
 
             # constructs
             line_new = re.sub(r'for\s*\(\s*\S+\s+(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
             line_new = re.sub(r'for\s*\(\s*(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
+            line_new = re.sub(r'for\s*\(\s*int\s*', r'for (', line_new)
             line_new = re.sub(r'else if', 'elseif', line_new)
 
             # array instantiations
-            if re.search(r'new [A-Z][\w.]+\[[^]]', line_new):
+            if re.search(r'\bnew [\w.]+\[[^]]', line_new):
                 square_index = 0
                 complementary_square_index = 0
                 array_sizes = []
                 while square_index != -1 and complementary_square_index >= square_index:
-                    match_instantiation = re.search(r'new [A-Z][\w.]+\[', line_new)
+                    match_instantiation = re.search(r'\bnew [\w.]+\[', line_new)
                     if not match_instantiation: break
                     instantiation_start_index = match_instantiation.start()
                     array_filler = 0
                     if 'new String' in match_instantiation.group(0): array_filler = '""'
-                    if re.search(r'(Array|Map|List)', match_instantiation.group(0)): array_filler = 'array()'
+                    if re.search(r'(Array|Linked|Map|List)', match_instantiation.group(0)): array_filler = 'array()'
 
-                    complementary_square_index = match_instantiation.end()-1
+                    complementary_square_index = match_instantiation.end() - 1
                     while square_index != -1 and complementary_square_index >= square_index:
                         square_index = line_new.find('[', complementary_square_index)
                         if square_index == -1: break
                         complementary_square_index = find_complementary_char_index(']', square_index, 'right', line_new)
                         if complementary_square_index == -1: break
-                        array_sizes.append(line_new[square_index+1:complementary_square_index])
+                        array_sizes.append(line_new[square_index + 1:complementary_square_index])
 
-                    if array_sizes and (complementary_square_index == -1 or not re.search(r'^\s*\[', line_new[complementary_square_index+1:])):
+                    if array_sizes and (complementary_square_index == -1 or not re.search(r'^\s*\[', line_new[complementary_square_index + 1:])):
                         replacement = array_filler
                         for i in range(len(array_sizes)):
                             replacement = f'array_fill(0, {array_sizes[i]}, {replacement})'
-                        line_new = line_new[:instantiation_start_index] + replacement + line_new[complementary_square_index+1:]
+                        line_new = line_new[:instantiation_start_index] + replacement + line_new[complementary_square_index + 1:]
                         array_sizes = []
 
             line_new = re.sub(r'Arrays.fill\(\s*([^,]+)\s*,\s*([^,]+)\s*\)', r'\g<1> = array_fill(0, sizeof(\g<1>), \g<2>)', line_new)
             line_new = re.sub(r'Arrays.copyOf\(\s*([^,]+)\s*,\s*([^,]+)\s*\)', r'array_slice(\g<1>, 0, \g<2>)', line_new)
 
             if 'new' in line_new:
-                if re.search(r'new [A-Z][\w.]+\[\]\[\]\s*{\s*$', line_new):
-                    line_new = re.sub(r'new [\w.]+\[\]\[*\]*\[*\]*\s*{\s*$', r'array(', line_new)
-                line_new = re.sub(r'new [\w.]+\[\]\[\]{(.+?)}', r'array(\g<1>)', line_new)
-                line_new = re.sub(r'new [\w.]+\[\]{\s*$', r'array(', line_new)
-                line_new = re.sub(r'new [\w.]+\[\]{(.+?)}', r'array(\g<1>)', line_new)
-                line_new = re.sub(r'new [\w.]+\[\]{}', r'array()', line_new)
-                line_new = re.sub(r'new [\w.]+\[\d+\]\s*;', r'array();', line_new)
-                line_new = re.sub(r'new ArrayList<>\(([^,)]+?)\)', r'\g<1>', line_new)
-                line_new = re.sub(r'new (ArrayList<>|HashMap<>|StringBuilder)', 'array', line_new)
+                if re.search(r'new [A-Z][\w.]+\[]\[]\s*{\s*$', line_new):
+                    line_new = re.sub(r'new [\w.]+\[]\[*]*\[*]*\s*{\s*$', r'array(', line_new)
+                line_new = re.sub(r'new [\w.]+\[]\[]\s*{(.+?)}', r'array(\g<1>)', line_new)
+                line_new = re.sub(r'new [\w.]+\[]\s*{\s*$', r'array(', line_new)
+                line_new = re.sub(r'new [\w.]+\[]\s*{(.+?)}', r'array(\g<1>)', line_new)
+                line_new = re.sub(r'new [\w.]+\[]\s*{}', r'array()', line_new)
+                line_new = re.sub(r'new [\w.]+\[\d+]\s*;', r'array();', line_new)
+                line_new = re.sub(r'new (Linked|Array)List<>\(([^,)]+?)\)', r'\g<2>', line_new)
+                line_new = re.sub(r'new (LinkedList<>|ArrayList<>|HashMap<>|StringBuilder)', 'array', line_new)
 
             line_new = re.sub(r'};', r');', line_new)
             line_new = re.sub(r'([^.\s]+)\.put\(([^,]+),([^,]+)\)', r'\g<1>[\g<2>] = \g<3>', line_new)
@@ -424,7 +427,7 @@ def main():
 
                     is_array_size = not re.search(r'\)\s*$', line_new[:curly_index])
                     if is_array_size:
-                        line_new = line_new[:curly_index] + 'array(' + line_new[curly_index+1:complementary_square_index] + ')' + line_new[complementary_square_index+1:]
+                        line_new = line_new[:curly_index] + 'array(' + line_new[curly_index + 1:complementary_square_index] + ')' + line_new[complementary_square_index + 1:]
 
             # java objects & getters/setters/is
             # line_new = re.sub(r'\b(List<[^>]+>|List<List<[^>]+>>|List<List<List<[^>]+>>>|int|long|char|boolean|long|[A-Z][a-z][\w.]+)\[*\]*\[*\]*\s+', '', line_new)
@@ -470,10 +473,12 @@ def main():
             line_new = re.sub(r'([^<>=\s]+)\s*=\s*\([\w<>.]+?\)\s*\([\w<>.]+?\)\s*(\w<>.]+)\s*\w+', r'\g<1> = \g<2>', line_new)
 
             # adding $ to variables
-            if 'latinRoot = verbSearchCandidate[INDEX_LATIN_ROOT].replace(" ","");' in line_old:
-                a=1
             line_new = add_dollars_in_text_incl_quotes(line_new)
             line_new = re.sub(r'catch\s*\((\$[a-z])', r'catch (Exception \g<1>', line_new)
+            line_new = re.sub(r'catch\s*\(Exception ([a-z])', r'catch (Exception $\g<1>', line_new)
+
+            # removing class closing bracket
+            line_new = re.sub(r'^}', r'', line_new)
 
             # removing extra empty lines
             if line_new or last_line: content_new.append(line_new)
