@@ -55,9 +55,9 @@ def find_complementary_char_index(requested_char, start_index, direction, text):
     num_open_square = 0
     for index in range(start_index, len(text)):
         is_escaped = index > 1 and text[index - 1] == '\\'
-        if not is_escaped and text[index] == '"':
+        if not is_escaped and text[index] == '"' and not is_in_single_quotes:
             is_in_double_quotes = not is_in_double_quotes
-        if not is_escaped and text[index] == '\'':
+        if not is_escaped and text[index] == '\'' and not is_in_double_quotes:
             is_in_single_quotes = not is_in_single_quotes
         if not is_in_double_quotes and not is_in_single_quotes and text[index] == '(':
             num_open_parentheses += increment
@@ -313,12 +313,12 @@ def main():
                               r'\g<1>function \g<7> {', line_new)
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|float|double|[A-Z][\w.]+<*\S*>*)'
-                              r'[*]*[*]*[*]*'
+                              r'\[*]*\[*]*\[*]*'
                               r'\s*(\w+\s*\()\s*\S+\s+(\S+\s*,)',
                               r'\g<1>function \g<7>\g<8>', line_new)
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|float|double|[A-Z][\w.]+<*\S*>*)'
-                              r'[*]*[*]*[*]*'
+                              r'\[*]*\[*]*\[*]*'
                               r'\s*(\w+\s*\()\s*$',
                               r'\g<1>function \g<7>', line_new)
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
@@ -335,16 +335,16 @@ def main():
             # variable instantiations
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|char|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'[*]*[*]*[*]*\s+(\w+)(\s*=\s*)(.+)$',
+                              r'\[*]*\[*]*\[*]*\s+(\w+)(\s*=\s*)(.+)$',
                               r'\g<1>\g<7>\g<8>\g<9>', line_new)
             line_new = re.sub(r'^(\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'[*]*[*]*[*]*\s+(\w+)\s*([),])',
+                              r'\[*]*\[*]*\[*]*\s+(\w+)\s*([),])',
                               r'\g<1>\g<3>\g<4>', line_new)
             line_new = re.sub(r'(,\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
-                              r'[*]*[*]*[*]*\s+(\w+)\s*([),])',
+                              r'\[*]*\[*]*\[*]*\s+(\w+)\s*([),])',
                               r'\g<1>\g<3>\g<4>', line_new)
             line_new = re.sub(r'^(\s*)(int|char|boolean|long|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>)'
-                              r'[*]*[*]*[*]*\s+(\w+)\s*;',
+                              r'\[*]*\[*]*\[*]*\s+(\w+)\s*;',
                               r'', line_new)
             line_new = re.sub(r'^(\s*)(HashMap<\s*[\w.\[\]<>]+\s*,\s*[\w.\[\]<>]+\s*>)'
                               r'\s+(\w+\s*)',
@@ -446,6 +446,8 @@ def main():
             line_new = re.sub(r'Arrays.asList\(([^)]+)\)', r'array(\g<1>)', line_new)
             line_new = re.sub(r'\b[A-Z][\w.]+\.([A-Z]\w+)\b', r'\g<1>', line_new)
 
+            if 'Object[] results = getInglessVerb(originalCleaned.replace("\'",""), originalType);' in line_old:
+                a=1
             if re.search(r'\w+\(.*\)', line_new) and not re.search(r'function', line_new):
                 local_line_num = line_num - 1
                 while not last_line_caller:
