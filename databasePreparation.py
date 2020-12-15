@@ -6,7 +6,19 @@ import Globals
 import ExtendedDbCreator
 import ExtendedDbCreator_Names
 import JMDictForeignMeaningsUpdater
+import Converter
 from Globals import *
+
+prepare_foreign_meanings = False
+prepare_grammar_db = False
+prepare_extended_db = False
+prepare_conj_lengths = False
+prepare_names_db = False
+prepare_kanji_db = False
+prepare_conj_db = False  # Not used, resulting db is too big to be useful
+prepare_frequency_db = False
+update_workbooks = False
+prepare_db_for_release = False
 
 prepare_foreign_meanings = True
 prepare_grammar_db = True
@@ -164,6 +176,9 @@ if prepare_grammar_db:
             wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_KW_FR).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KW_FR).value
             wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_MEANINGS_ES).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_MEANINGS_ES).value
             wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_KW_ES).value = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_KW_ES).value
+            romaji = wsVerbs.cell(row=verbsRow, column=Globals.VERBS_COL_ROMAJI).value
+            hiragana = Converter.getOfficialKana(romaji)[0]
+            wsVerbsForGrammar.cell(row=verbsForGrammarRow, column=Globals.TYPES_COL_HIRAGANA_FIRST_CHAR).value = str(hiragana[0])
 
             verbsForGrammarRow += 1
         verbsRow += 1
@@ -323,7 +338,7 @@ if prepare_grammar_db:
     Globals.create_csv_from_worksheet(wsMultExplFR, name("MultExplFR"), idx("A"), idx("D"))
     Globals.create_csv_from_worksheet(wsMultExplES, name("MultExplES"), idx("A"), idx("D"))
     Globals.create_csv_from_worksheet(wsExamples, name("Examples"), idx("A"), idx("F"))
-    Globals.create_csv_from_worksheet(wsVerbsForGrammar, name("VerbsForGrammar"), idx("A"), idx("P"))
+    Globals.create_csv_from_worksheet(wsVerbsForGrammar, name("VerbsForGrammar"), idx("A"), idx("S"))
     # endregion
 
 if prepare_conj_lengths:

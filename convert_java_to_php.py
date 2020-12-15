@@ -3,6 +3,8 @@ import re
 from os import listdir
 from os.path import isfile, join
 
+import Globals
+
 PATH_UTILITIES_CROSS_PLATFORM = 'C:/Projects/Workspace/Japagram/app/src/main/java/com/japagram/utilitiesCrossPlatform'
 PATH_UTILITIES_OVERRIDABLE = 'C:/Projects/Workspace/Japagram/app/src/main/java/com/japagram/utilitiesPlatformOverridable'
 PATH_PHP = 'C:/Projects/Workspace/Web/Java2PhpFiles'
@@ -14,7 +16,7 @@ REPLACEMENT_FUNCTIONS = {
     'endsWith': ['endsWith(', 'caller', ', ', 'arguments', ')'],
     'append': ['array_push(', 'caller', ', ', 'arguments', ')'],
     'replaceAll': ['preg_replace(', 'arguments', ', ', 'caller', ')'],
-    'replace': ['preg_replace(', 'arguments', ', ', 'caller', ')'],
+    'replace': ['str_replace(', 'arguments', ', ', 'caller', ')'],
     'subList': ['array_slice(', 'caller', ', ', 'arguments', ')'],
     'contains': ['contains(', 'caller', ', ', 'arguments', ')'],
     'containsKey': ['array_key_exists(', 'arguments', ', ', 'caller', ')'],
@@ -35,17 +37,6 @@ REPLACEMENT_FUNCTIONS = {
 REPLACEMENT_FUNCTIONS_NO_PARENTHESES = {
     'length': ['sizeof(', 'caller', ')'],
 }
-
-
-def get_file_contents(filename):
-    with open(filename, encoding="utf8") as fh:
-        return fh.read()
-
-
-def write_to_file(rwa, filename, content):
-    fh = open(filename, rwa, encoding="utf8")
-    fh.write(content)
-    fh.close()
 
 
 def find_complementary_char_index(requested_char, start_index, direction, text):
@@ -174,7 +165,7 @@ def add_dollars_in_text_incl_quotes(text):
 
     text = re.sub(r'\$(null|return|true|false|default|new|continue|try|catch|finally|echo'
                   r'|contains|array|array_push|array_slice|array_fill|array_key_exists'
-                  r'|substr|mb_substr|mb_strlen|preg_replace|trim|strtolower|strtoupper|sizeof'
+                  r'|substr|mb_substr|mb_strlen|preg_replace|str_replace|trim|strtolower|strtoupper|sizeof'
                   r'|explode|implode)\b', r'\g<1>', text)
     return text
 
@@ -219,7 +210,7 @@ def convert_caller_and_arguments(text, last_line_caller):
                 arguments_converted = convert_caller_and_arguments(arguments, '')
 
             chosen_preg_replace_key = '/'
-            if java_function == 'replace' or java_function == 'replaceAll':
+            if java_function == 'replaceAll':
                 preg_replace_keys = ['/', '#', '@', '%', '~', '*', '=', '`']
                 preg_replace_keys_not_in_arguments_converted = [item for item in preg_replace_keys if item not in arguments_converted]
                 if len(preg_replace_keys_not_in_arguments_converted) > 0:
@@ -230,7 +221,7 @@ def convert_caller_and_arguments(text, last_line_caller):
                 if item == 'caller':
                     function_converted += caller
                 elif item == 'arguments':
-                    if java_function == 'replace' or java_function == 'replaceAll':
+                    if java_function == 'replaceAll':
                         arguments_converted = f'"{chosen_preg_replace_key}"+' + arguments_converted
                         arguments_separator_comma_index = find_complementary_char_index(',', 0, 'right', arguments_converted)
                         arguments_converted_pre = arguments_converted[:arguments_separator_comma_index]
@@ -255,7 +246,7 @@ def main():
     is_open_global = False
     for java_name in java_files:
         # if 'UtilitiesVerbSearch' not in java_name: continue
-        content = get_file_contents(f'{PATH_UTILITIES_CROSS_PLATFORM}/{java_name}')
+        content = Globals.get_file_contents(f'{PATH_UTILITIES_CROSS_PLATFORM}/{java_name}')
 
         content_new = []
         last_line = ''
@@ -335,7 +326,7 @@ def main():
                                   r', \g<1>\g<2>', line_new)
 
             if 'conjugationTitle.setTitle(OverridableUtilitiesResources.getString(titleRef, context, Globals.RESOURCE_MAP_VERB_CONJ_TITLES, language));' in line_old:
-                a=1
+                a = 1
             # variable instantiations
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
                               r'(int|boolean|long|char|float|double|[A-Z][\w.]+<*\S*>*|HashMap<\s*[\w.\[\]]+\s*,\s*[\w.\[\]]+\s*>*)'
@@ -368,12 +359,12 @@ def main():
             if is_open_global and re.search(r'}\s*;', line_new):
                 line_new = re.sub(r'}\s*;', r"));", line_new)
                 is_open_global = False
-            line_new = re.sub(r'([^\w\s]\s*)(\b[A-Z][A-Z0-9_]+\b)', r"\g<1>$GLOBALS['\g<2>']", line_new)
-            line_new = re.sub(r"^(\s*define\()'\$GLOBALS\['([A-Z][A-Z0-9_]+)']'", r"\g<1>\g<2>", line_new)
-            line_new = re.sub(r"\"\$GLOBALS\['([A-Z][A-Z0-9_]+)']\"", r'"\g<1>"', line_new)
+            line_new = re.sub(r'(\bGLOBAL_[A-Z][A-Z0-9_]+\b)', r"$GLOBALS['\g<1>']", line_new)
+            # line_new = re.sub(r"^(\s*define\()'\$GLOBALS\['([A-Z][A-Z0-9_]+)']'", r"\g<1>\g<2>", line_new)
+            # line_new = re.sub(r"\"\$GLOBALS\['([A-Z][A-Z0-9_]+)']\"", r'"\g<1>"', line_new)
             # line_new = re.sub(r'Globals\.([A-Z0-9_]+)', r"$GLOBALS['\g<1>']", line_new)
             line_new = re.sub(r'Globals\.', r"", line_new)
-            line_new = re.sub(r"\[\$GLOBALS\['([A-Z][A-Z0-9_]+)']]", r'[\g<1>]', line_new)
+            # line_new = re.sub(r"\[\$GLOBALS\['([A-Z][A-Z0-9_]+)']]", r'[\g<1>]', line_new)
 
             # constructs
             line_new = re.sub(r'for\s*\(\s*\S+\s+(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
@@ -457,9 +448,9 @@ def main():
             line_new = re.sub(r'Arrays.asList\(([^)]+)\)', r'array(\g<1>)', line_new)
             line_new = re.sub(r'\b[A-Z][\w.]+\.([A-Z]\w+)\b', r'\g<1>', line_new)
 
-            if 'Object[] results = getInglessVerb(originalCleaned.replace("\'",""), originalType);' in line_old:
-                a=1
-            if re.search(r'\w+\(.*\)', line_new) and not re.search(r'function', line_new):
+            if 'if (phonemes.length == 2) {' in line_old:
+                a = 1
+            if re.search(r'\w+(\(.*\)|\w+)', line_new) and not re.search(r'function', line_new):
                 local_line_num = line_num - 1
                 while not last_line_caller:
                     local_content_old_line = content_old[local_line_num]
@@ -489,6 +480,7 @@ def main():
             line_new = add_dollars_in_text_incl_quotes(line_new)
             line_new = re.sub(r'catch\s*\((\$[a-z])', r'catch (Exception \g<1>', line_new)
             line_new = re.sub(r'catch\s*\(Exception ([a-z])', r'catch (Exception $\g<1>', line_new)
+            line_new = re.sub(r'->\$', r'->', line_new)
 
             # removing class closing bracket
             line_new = re.sub(r'^}', r'', line_new)
@@ -498,7 +490,7 @@ def main():
             last_line = line_new
 
         php_name = java_name + '.php'
-        write_to_file('w+', f'{PATH_PHP}/{php_name}', '<?php\n' + '\n'.join(content_new) + '\n?>')
+        Globals.write_to_file('w+', f'{PATH_PHP}/{php_name}', '<?php\n' + '\n'.join(content_new) + '\n?>')
 
 
 main()

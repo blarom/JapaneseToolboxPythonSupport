@@ -1,19 +1,17 @@
+import os
 from os import listdir
-from os.path import isfile, join
-from pyexcel_ods3 import save_data
+# from pyexcel_ods3 import save_data
 from collections import OrderedDict
 import Globals
 
 SQL_PATH = r'C:\Projects\Workspace\Web\JT database'
 MAX_CHUNK_LENGTH = 2500000
-lineFiles = [f for f in listdir(Globals.JAPAGRAM_ASSETS_DIR) if isfile(join(Globals.JAPAGRAM_ASSETS_DIR, f))]
+lineFiles = [f for f in listdir(Globals.JAPAGRAM_ASSETS_DIR) if os.path.isfile(os.path.join(Globals.JAPAGRAM_ASSETS_DIR, f))]
 
 data = OrderedDict()
 for lineFile in lineFiles:
-    fh = open(join(Globals.JAPAGRAM_ASSETS_DIR, lineFile), 'r+', encoding='utf-8')
-    content = fh.read()
+    content = Globals.get_file_contents(os.path.join(Globals.JAPAGRAM_ASSETS_DIR, lineFile))
     lines = content.split('\n')
-    fh.close()
 
     if 'Extended' in lineFile: table_name = '`jt_' + lineFile.split('-')[0][4:-1] + lineFile.split('-')[1][1:-4] + '`'
     else:  table_name = '`jt_' + lineFile[4:].split('-')[0][:-1] + '`'
@@ -21,7 +19,7 @@ for lineFile in lineFiles:
     # Creating the columns
     sql_content = 'DROP TABLE IF EXISTS ' + table_name + ';\n'
     sql_content += 'CREATE TABLE IF NOT EXISTS ' + table_name + ' (\n'
-
+    if 'SortedIndex' not in table_name: continue
     if 'ExtendedDbWords' in table_name:
         column_names = ["Index", "romaji", "kanji", "POS", "altSpellings", "meaningsEN", "meaningsFR", "meaningsES"]
         sql_content += '`' + column_names[0].replace(' ', '_').replace('\\', '\\\\') + '` TEXT CHARACTER SET utf8,\n'
@@ -75,12 +73,13 @@ for lineFile in lineFiles:
     cumulative_content = ''
     partition_index = 0
     is_partitioned = False
+    ends_in_vert_line = lines[0][-1] == '|'
     for i in range(start_row, len(lines)):
         column_items = lines[i].split('|')
         if len(column_items) == 0 or lines[i] == '' or column_items[0] == '': continue
 
         adapted_items = []
-        for item in column_items[:-1]:
+        for item in (column_items[:-1] if ends_in_vert_line else column_items):
             if item != '':
                 adapted_items.append("\"" + item.replace('\"', '\"\"').replace('\\', '\\\\') + "\"")
             else:
@@ -94,7 +93,7 @@ for lineFile in lineFiles:
             sql_content = sql_content[:-1] + ';'
 
             # Writing to a PART file
-            fh = open(join(SQL_PATH, table_name[1:-1] + '-PART' + str(partition_index) + '.txt'), 'w+', encoding='utf-8')
+            fh = open(os.path.join(SQL_PATH, table_name[1:-1] + '-PART' + str(partition_index) + '.txt'), 'w+', encoding='utf-8')
             fh.write(sql_content)
             fh.close()
             partition_index += 1
@@ -110,7 +109,7 @@ for lineFile in lineFiles:
         sheet.append(column_items[:-1])
 
     sql_content = sql_content[:-1] + ';'
-    fh = open(join(SQL_PATH, table_name[1:-1] + ('-PART' + str(partition_index) if is_partitioned else '') + '.txt'), 'w+', encoding='utf-8')
+    fh = open(os.path.join(SQL_PATH, table_name[1:-1] + ('-PART' + str(partition_index) if is_partitioned else '') + '.txt'), 'w+', encoding='utf-8')
     fh.write(sql_content)
     fh.close()
 

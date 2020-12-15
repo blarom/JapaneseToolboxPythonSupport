@@ -1,6 +1,18 @@
 
 from openpyxl.utils.cell import coordinate_from_string, column_index_from_string
 
+
+def get_file_contents(filename):
+    with open(filename, encoding="utf8") as fh:
+        return fh.read()
+
+
+def write_to_file(rwa, filename, content):
+    fh = open(filename, rwa, encoding="utf8")
+    fh.write(content)
+    fh.close()
+
+
 MASTER_DIR = 'C:/Users/Bar/Dropbox/Japanese'
 OUTPUT_DIR = 'C:/Projects/Workspace/JapaneseToolboxPythonSupport'
 JAPAGRAM_ASSETS_DIR = 'C:/Projects/Workspace/Japagram/app/src/main/assets'
@@ -24,6 +36,7 @@ TYPES_COL_MEANINGS_FR = 13
 TYPES_COL_KW_FR = 14
 TYPES_COL_MEANINGS_ES = 15
 TYPES_COL_KW_ES = 16
+TYPES_COL_HIRAGANA_FIRST_CHAR = 17
 
 MEANINGS_COL_INDEX = 1
 MEANINGS_COL_MEANING = 2
@@ -79,6 +92,13 @@ NAMES_COL_ROMAJI = 2
 NAMES_COL_KANJI = 3
 NAMES_COL_CLASSIFICATION = 4
 NAMES_COL_ENGLISH = 5
+
+ROMANIZATIONS_HIRA = 0
+ROMANIZATIONS_KATA = 1
+ROMANIZATIONS_WAPU = 2
+ROMANIZATIONS_HEPB = 3
+ROMANIZATIONS_NISH = 4
+ROMANIZATIONS_KUSH = 5
 
 EDICT_EXCEPTIONS = [
     ["ha", "は"],

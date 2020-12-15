@@ -1,4 +1,114 @@
 #!/usr/bin/python -tt
+import re
+
+import Globals
+
+content = Globals.get_file_contents(f'{Globals.JAPAGRAM_ASSETS_DIR}/LineRomanizations.csv')
+ROMANIZATIONS = {
+    Globals.ROMANIZATIONS_HIRA: [],
+    Globals.ROMANIZATIONS_KATA: [],
+    Globals.ROMANIZATIONS_WAPU: [],
+    Globals.ROMANIZATIONS_HEPB: [],
+    Globals.ROMANIZATIONS_NISH: [],
+    Globals.ROMANIZATIONS_KUSH: []
+}
+for line in content.split('\n'):
+    elements = line.split('|')
+    if len(elements) < 6: continue
+    ROMANIZATIONS[Globals.ROMANIZATIONS_HIRA] += [elements[Globals.ROMANIZATIONS_HIRA]]
+    ROMANIZATIONS[Globals.ROMANIZATIONS_KATA] += [elements[Globals.ROMANIZATIONS_KATA]]
+    ROMANIZATIONS[Globals.ROMANIZATIONS_WAPU] += [elements[Globals.ROMANIZATIONS_WAPU]]
+    ROMANIZATIONS[Globals.ROMANIZATIONS_HEPB] += [elements[Globals.ROMANIZATIONS_HEPB]]
+    ROMANIZATIONS[Globals.ROMANIZATIONS_NISH] += [elements[Globals.ROMANIZATIONS_NISH]]
+    ROMANIZATIONS[Globals.ROMANIZATIONS_KUSH] += [elements[Globals.ROMANIZATIONS_KUSH]]
+
+
+def getOfficialKana(inputText):
+    if ROMANIZATIONS is None:
+        return ["", "", "", ""]
+    # Transliterations performed according to https://en.wikipedia.org/wiki/Romanization_of_Japanese
+    transliteratedToHiragana = inputText
+    transliteratedToKatakana = inputText
+    romajiTypes = [
+        Globals.ROMANIZATIONS_WAPU,
+        Globals.ROMANIZATIONS_HEPB,
+        Globals.ROMANIZATIONS_NISH,
+        Globals.ROMANIZATIONS_KUSH
+    ]
+    romanizationsLength = len(ROMANIZATIONS[Globals.ROMANIZATIONS_HIRA])
+
+    # Translating from Katakana to Hiragana
+    transliteratedToHiragana_last = ''
+    for i in range(romanizationsLength):
+        currentChar = ROMANIZATIONS[Globals.ROMANIZATIONS_KATA][i]
+        if currentChar == "": continue
+        transliteratedToHiragana = transliteratedToHiragana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_HIRA][i])
+
+    # Translating from from Hiragana to Katakana
+    for i in range(romanizationsLength):
+        currentChar = ROMANIZATIONS[Globals.ROMANIZATIONS_HIRA][i]
+        if currentChar == "": continue
+        transliteratedToKatakana = transliteratedToKatakana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_KATA][i])
+
+    # Translating from Romaji to Kana
+    for romajiType in romajiTypes:
+        for i in range(romanizationsLength):
+            currentChar = ROMANIZATIONS[romajiType][i]
+            if ((currentChar == "")
+                    or (currentChar == "aa")
+                    or (currentChar == "ii")
+                    or (currentChar == "uu")
+                    or (currentChar == "ee")
+                    or (currentChar == "oo")):
+                continue
+            transliteratedToHiragana = transliteratedToHiragana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_HIRA][i])
+            transliteratedToKatakana = transliteratedToKatakana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_KATA][i])
+            if transliteratedToHiragana_last != transliteratedToHiragana:
+                a = 1
+            transliteratedToHiragana_last = transliteratedToHiragana
+
+        # If there are leftover double-vowels, only then should they be replaced
+        for i in range(romanizationsLength):
+            currentChar = ROMANIZATIONS[romajiType][i]
+            if ((currentChar == "")
+                    or not ((currentChar == "aa")
+                            or (currentChar == "ii")
+                            or (currentChar == "uu")
+                            or (currentChar == "ee")
+                            or (currentChar == "oo"))):
+                continue
+            transliteratedToHiragana = transliteratedToHiragana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_HIRA][i])
+            transliteratedToKatakana = transliteratedToKatakana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_KATA][i])
+
+    # If there are leftover consonants, replace them by a japanized version
+    oldTransliteration = transliteratedToHiragana
+    transliteratedToHiragana = re.sub("([bdfghjkmnprstvz])", "\1u", transliteratedToHiragana)
+    transliteratedToKatakana = re.sub("([bdfghjkmnprstvz])", "\1u", transliteratedToKatakana)
+
+    if not (oldTransliteration == transliteratedToHiragana):
+        for i in range(romanizationsLength):
+            currentChar = ROMANIZATIONS[Globals.ROMANIZATIONS_WAPU][i]
+            if ((currentChar == "")
+                    or (currentChar == "aa")
+                    or (currentChar == "ii")
+                    or (currentChar == "uu")
+                    or (currentChar == "ee")
+                    or (currentChar == "oo")):
+                continue
+            transliteratedToHiragana = transliteratedToHiragana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_HIRA][i])
+            transliteratedToKatakana = transliteratedToKatakana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_KATA][i])
+
+    # Cleaning the leftovers
+    transliteratedToHiragana = re.sub("[a-z]", "*", transliteratedToHiragana)
+    transliteratedToKatakana = re.sub("[a-z]", "*", transliteratedToKatakana)
+    transliteratedToHiragana = transliteratedToHiragana.replace('#', '')
+    transliteratedToKatakana = transliteratedToKatakana.replace('#', '')
+
+    return [transliteratedToHiragana, transliteratedToKatakana]
+
+
+# a = getOfficialKana('shibireru')
+# b = 1
 
 
 class Converter:
