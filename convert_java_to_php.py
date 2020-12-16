@@ -164,7 +164,7 @@ def add_dollars_in_text_incl_quotes(text):
         text = '"'.join(new_line_parts)
 
     text = re.sub(r'\$(null|return|true|false|default|new|continue|try|catch|finally|echo'
-                  r'|contains|array|array_push|array_slice|array_fill|array_key_exists'
+                  r'|contains|listContains|array|array_push|array_slice|array_fill|array_key_exists'
                   r'|substr|mb_substr|mb_strlen|preg_replace|str_replace|trim|strtolower|strtoupper|sizeof'
                   r'|explode|implode)\b', r'\g<1>', text)
     return text
@@ -232,7 +232,10 @@ def convert_caller_and_arguments(text, last_line_caller):
                     arguments_converted = arguments_converted.replace('\\\\', '\\')
                     function_converted += arguments_converted
                 else:
-                    function_converted += item
+                    if java_function == 'contains' and 'contains' in item and re.search(r'list', caller, re.IGNORECASE):
+                        function_converted += 'listContains('
+                    else:
+                        function_converted += item
 
             text_converted = text_converted[:caller_start_position] + function_converted + text_converted[arguments_end_position + 1:]
 
@@ -296,6 +299,7 @@ def main():
             line_new = re.sub(r'OverridableUtilitiesGeneral.joinList', 'implode', line_new)
             line_new = re.sub(r'OverridableUtilities\w+\.', '', line_new)
             line_new = re.sub(r'Utilities\w+\.', '', line_new)
+            line_new = re.sub(r'Character.toString\(', '(', line_new)
 
             # function instantiations
             line_new = re.sub(r'^(\s*)(public |private |)(final |)(static |)(final |)'
