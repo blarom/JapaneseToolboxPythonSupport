@@ -10,7 +10,7 @@ PATH_UTILITIES_OVERRIDABLE = 'C:/Projects/Workspace/Japagram/app/src/main/java/c
 PATH_PHP = 'C:/Projects/Workspace/Web/Java2PhpFiles'
 
 REPLACEMENT_FUNCTIONS = {
-    'addAll': ['array_merge(', 'caller', ', ', 'arguments', ')'],
+    'addAll': ['caller', ' = array_merge(', 'caller', ', ', 'arguments', ')'],
     'add': ['array_push(', 'caller', ', ', 'arguments', ')'],
     'startsWith': ['startsWith(', 'caller', ', ', 'arguments', ')'],
     'endsWith': ['endsWith(', 'caller', ', ', 'arguments', ')'],
@@ -94,7 +94,7 @@ def get_caller_start_position(end_index, text):
         if is_field_call: index -= 1
         if num_open_parentheses == -1 or \
                 num_open_parentheses == 0 and \
-                re.search(r'[\s!?\-+=*&|/%#@^~;,<>]', text[index]) \
+                re.search(r'[\s!?\-+=*&|/%#@^~;,<>{]', text[index]) \
                 and not is_open_single_quote \
                 and not is_open_double_quote \
                 and not is_field_call:
@@ -166,7 +166,7 @@ def add_dollars_in_text_incl_quotes(text):
     text = re.sub(r'\$(null|return|true|false|default|new|continue|try|catch|finally|echo'
                   r'|contains|listContains|array|array_push|array_slice|array_fill|array_key_exists'
                   r'|substr|mb_substr|mb_strlen|preg_replace|str_replace|trim|strtolower|strtoupper|sizeof'
-                  r'|explode|implode)\b', r'\g<1>', text)
+                  r'|explode|implode|get[A-Z]\w+)\b', r'\g<1>', text)
     return text
 
 
@@ -371,17 +371,18 @@ def main():
             # line_new = re.sub(r"\[\$GLOBALS\['([A-Z][A-Z0-9_]+)']]", r'[\g<1>]', line_new)
 
             # constructs
-            line_new = re.sub(r'for\s*\(\s*\S+\s+(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
-            line_new = re.sub(r'for\s*\(\s*(\w+)\s*:\s*(\S+)\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
+            for second_element in [r'(\S+\(.+?\))', r'(\S+)']:
+                line_new = re.sub(r'for\s*\(\s*\S+\s+(\w+)\s*:\s*'+second_element+r'\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
+                line_new = re.sub(r'for\s*\(\s*(\w+)\s*:\s*'+second_element+r'\s*\)', r'foreach ($\g<2> AS $\g<1>)', line_new)
             line_new = re.sub(r'for\s*\(\s*int\s*', r'for (', line_new)
             line_new = re.sub(r'else if', 'elseif', line_new)
 
             # array instantiations
             if re.search(r'\bnew [\w.]+\[[^]]', line_new):
                 square_index = 0
-                complementary_square_index = 0
+                complementary_curly_index = 0
                 array_sizes = []
-                while square_index != -1 and complementary_square_index >= square_index:
+                while square_index != -1 and complementary_curly_index >= square_index:
                     match_instantiation = re.search(r'\bnew [\w.]+\[', line_new)
                     if not match_instantiation: break
                     instantiation_start_index = match_instantiation.start()
@@ -389,25 +390,26 @@ def main():
                     if 'new String' in match_instantiation.group(0): array_filler = '""'
                     if re.search(r'(Array|Linked|Map|List)', match_instantiation.group(0)): array_filler = 'array()'
 
-                    complementary_square_index = match_instantiation.end() - 1
-                    while square_index != -1 and complementary_square_index >= square_index:
-                        square_index = line_new.find('[', complementary_square_index)
+                    complementary_curly_index = match_instantiation.end() - 1
+                    while square_index != -1 and complementary_curly_index >= square_index:
+                        square_index = line_new.find('[', complementary_curly_index)
                         if square_index == -1: break
-                        complementary_square_index = find_complementary_char_index(']', square_index, 'right', line_new)
-                        if complementary_square_index == -1: break
-                        array_sizes.append(line_new[square_index + 1:complementary_square_index])
+                        complementary_curly_index = find_complementary_char_index(']', square_index, 'right', line_new)
+                        if complementary_curly_index == -1: break
+                        array_sizes.append(line_new[square_index + 1:complementary_curly_index])
 
-                    if array_sizes and (complementary_square_index == -1 or not re.search(r'^\s*\[', line_new[complementary_square_index + 1:])):
+                    if array_sizes and (complementary_curly_index == -1 or not re.search(r'^\s*\[', line_new[complementary_curly_index + 1:])):
                         replacement = array_filler
                         for i in range(len(array_sizes)):
                             replacement = f'array_fill(0, {array_sizes[i]}, {replacement})'
-                        line_new = line_new[:instantiation_start_index] + replacement + line_new[complementary_square_index + 1:]
+                        line_new = line_new[:instantiation_start_index] + replacement + line_new[complementary_curly_index + 1:]
                         array_sizes = []
 
             line_new = re.sub(r'Arrays.fill\(\s*([^,]+)\s*,\s*([^,]+)\s*\)', r'\g<1> = array_fill(0, sizeof(\g<1>), \g<2>)', line_new)
             line_new = re.sub(r'Arrays.copyOf\(\s*([^,]+)\s*,\s*([^,]+)\s*\)', r'array_slice(\g<1>, 0, \g<2>)', line_new)
 
             if 'new' in line_new:
+                line_new = re.sub(r'new ArrayList<>\(Arrays.asList', r'(array', line_new)
                 line_new = re.sub(r'new LinkedHashSet<>', r'removeDuplicatesInArray', line_new)
                 if re.search(r'new [A-Z][\w.]+\[]\[]\s*{\s*$', line_new):
                     line_new = re.sub(r'new [\w.]+\[]\[*]*\[*]*\s*{\s*$', r'array(', line_new)
@@ -424,16 +426,18 @@ def main():
 
             if '{' in line_new:
                 curly_index = 0
-                complementary_square_index = 0
-                while curly_index != -1 and complementary_square_index >= curly_index:
-                    curly_index = line_new[complementary_square_index:].find('{')
+                complementary_curly_index = 0
+                while curly_index != -1 and complementary_curly_index >= curly_index:
+                    curly_index = line_new[complementary_curly_index:].find('{')
                     if curly_index == -1: break
-                    complementary_square_index = find_complementary_char_index('}', curly_index, 'right', line_new)
-                    if complementary_square_index == -1: break
+                    complementary_curly_index = find_complementary_char_index('}', curly_index, 'right', line_new)
+                    if complementary_curly_index == -1: break
 
-                    is_array_size = not re.search(r'\)\s*$', line_new[:curly_index])
-                    if is_array_size:
-                        line_new = line_new[:curly_index] + 'array(' + line_new[curly_index + 1:complementary_square_index] + ')' + line_new[complementary_square_index + 1:]
+                    is_array_instantiation = not re.search(r';', line_new[curly_index + 1:complementary_curly_index])
+                    if is_array_instantiation:
+                        line_new = line_new[:curly_index] + 'array(' + line_new[curly_index + 1:complementary_curly_index] + ')' + line_new[complementary_curly_index + 1:]
+                    else:
+                        line_new = line_new[:curly_index] + '{' + line_new[curly_index + 1:complementary_curly_index] + '}' + line_new[complementary_curly_index + 1:]
 
             # java objects & getters/setters/is
             # line_new = re.sub(r'\b(List<[^>]+>|List<List<[^>]+>>|List<List<List<[^>]+>>>|int|long|char|boolean|long|[A-Z][a-z][\w.]+)\[*\]*\[*\]*\s+', '', line_new)
@@ -449,11 +453,12 @@ def main():
 
             # object manipulations
             # line_new = re.sub(r'([\w$]+)\.length\b[^(]', r'sizeof(\g<1>)', line_new)
-            line_new = re.sub(r'Arrays.asList\(([^)]+)\)', r'array(\g<1>)', line_new)
+            line_new = re.sub(r'Arrays.asList\s*(\(.+split.+\))', r'\g<1>', line_new)
+            line_new = re.sub(r'Arrays.asList\s*', r'array', line_new)
             line_new = re.sub(r'\b[A-Z][\w.]+\.([A-Z]\w+)\b', r'\g<1>', line_new)
 
-            if 'if (phonemes.length == 2) {' in line_old:
-                a = 1
+            if '          else {radical_characteristics.add("");}' in line_old:
+                a=1
             if re.search(r'\w+(\(.*\)|\w+)', line_new) and not re.search(r'function', line_new):
                 local_line_num = line_num - 1
                 while not last_line_caller:
@@ -477,8 +482,8 @@ def main():
             line_new = re.sub(r'Integer.parseInt\((.+)\)', r'(\g<1> + 0)', line_new)
 
             # removing casting
-            line_new = re.sub(r'([^<>=\s]+)\s*=\s*\([\w<>.]+?\)\s*([\w<>.]+)\s*\w+', r'\g<1> = \g<2>', line_new)
-            line_new = re.sub(r'([^<>=\s]+)\s*=\s*\([\w<>.]+?\)\s*\([\w<>.]+?\)\s*(\w<>.]+)\s*\w+', r'\g<1> = \g<2>', line_new)
+            line_new = re.sub(r'([^<>=\s]+)\s*=\s*\([\w<>.]+?\)\s*\([\w<>.]+?\)\s*(\w<>.]+)', r'\g<1> = \g<2>', line_new)
+            line_new = re.sub(r'([^<>=\s]+)\s*=\s*\([\w<>.]+?\)\s*([\w<>.]+)', r'\g<1> = \g<2>', line_new)
 
             # adding $ to variables
             line_new = add_dollars_in_text_incl_quotes(line_new)

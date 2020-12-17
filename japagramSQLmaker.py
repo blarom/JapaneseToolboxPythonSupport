@@ -19,21 +19,20 @@ for lineFile in lineFiles:
     # Creating the columns
     sql_content = 'DROP TABLE IF EXISTS ' + table_name + ';\n'
     sql_content += 'CREATE TABLE IF NOT EXISTS ' + table_name + ' (\n'
-    if 'SortedIndex' not in table_name: continue
     if 'ExtendedDbWords' in table_name:
         column_names = ["Index", "romaji", "kanji", "POS", "altSpellings", "meaningsEN", "meaningsFR", "meaningsES"]
         sql_content += '`' + column_names[0].replace(' ', '_').replace('\\', '\\\\') + '` TEXT CHARACTER SET utf8,\n'
         start_row = 0
     elif 'Extended' in lineFile and 'Index' in table_name:
-        column_names = ["value", "word_ids"]
+        column_names = ["value", "wordIds"]
         sql_content += '`' + column_names[0].replace(' ', '_').replace('\\', '\\\\') + '` TEXT CHARACTER SET utf8,\n'
         start_row = 0
     elif 'IndexKanji' in table_name:
-        column_names = ['value', 'word_ids', 'kana_ids']
+        column_names = ['value', 'wordIds', 'kanaIds']
         sql_content += '`' + column_names[0].replace(' ', '_').replace('\\', '\\\\') + '` TEXT CHARACTER SET utf8,\n'
         start_row = 0
     elif 'Index' in table_name:
-        column_names = ['value', 'word_ids']
+        column_names = ['value', 'wordIds']
         sql_content += '`' + column_names[0].replace(' ', '_').replace('\\', '\\\\') + '` TEXT CHARACTER SET utf8,\n'
         start_row = 0
     elif 'Decomposition' in table_name:
