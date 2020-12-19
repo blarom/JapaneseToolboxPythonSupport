@@ -7,7 +7,7 @@ import re
 import openpyxl
 
 import Globals
-from Converter import Converter
+import Converter
 
 def main():
     current_entry = ''
@@ -55,10 +55,6 @@ def main():
             self.uniqueID = romaji + "zzz" + kanji
             self.classifications = classifications
             self.englishes = englishes
-
-
-    converter = Converter()
-
 
     def add_index_to_dict(index_dict, index, key):
         if key in index_dict.keys():
@@ -128,7 +124,7 @@ def main():
                 romaji = ''
                 if len(kanas) > 0:
                     hiragana = kanas[0]
-                    romaji = converter.get_latin_hiragana_katakana(hiragana)[converter.TYPE_LATIN]
+                    romaji = Converter.getOfficialWaapuroOnly(hiragana)
                     if kanji == '': kanji = hiragana
                 # endregion
 

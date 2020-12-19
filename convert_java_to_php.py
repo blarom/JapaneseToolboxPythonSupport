@@ -278,10 +278,10 @@ def main():
                 content_new.append(line_new)
                 continue
 
-            match_log = re.search(r'OverridableUtilitiesGeneral.printLog', line_old)
+            match_log = re.search(r'OvUtilsGeneral.printLog', line_old)
             if match_log:
                 line_new = line_old
-                content_new.append(re.sub(r'^(\s*)OverridableUtilitiesGeneral.printLog(.+)', r'\g<1>//Log\g<2>', line_new))
+                content_new.append(re.sub(r'^(\s*)OvUtilsGeneral.printLog(.+)', r'\g<1>//Log\g<2>', line_new))
                 continue
 
             line_new = line_old
@@ -297,10 +297,9 @@ def main():
             line_new = re.sub(r'\b([\d.]+)\.f\b', r'\g<1>', line_new)
 
             # application-specific keywords
-            line_new = re.sub(r'OverridableUtilitiesGeneral.joinList', 'implode', line_new)
-            line_new = re.sub(r'OverridableUtilitiesGeneral.joinArray', 'implode', line_new)
-            line_new = re.sub(r'OverridableUtilitiesGeneral\.', '', line_new)
-            line_new = re.sub(r'OverridableUtilities\w+\.', '', line_new)
+            line_new = re.sub(r'OvUtilsGeneral.joinList', 'implode', line_new)
+            line_new = re.sub(r'OvUtilsGeneral\.', '', line_new)
+            line_new = re.sub(r'OvUtils\w+\.', '', line_new)
             line_new = re.sub(r'Utilities\w+\.', '', line_new)
             line_new = re.sub(r'Character.toString\(', '(', line_new)
 

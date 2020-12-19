@@ -1,5 +1,5 @@
 #!/usr/bin/python -tt
-
+import os
 import re
 import openpyxl
 import Globals
@@ -44,8 +44,45 @@ if prepare_db_for_release:
 if prepare_foreign_meanings:
     JMDictForeignMeaningsUpdater.main()
 
+if prepare_frequency_db:
+    # region Reading worksheets
+    FrequencyWorkbook = openpyxl.load_workbook(filename=f'{Globals.MASTER_DIR}/Frequencies.xlsx', data_only=True)
+    print("Finished loading Frequencies.xlsx")
+    wsFrequencyWords = FrequencyWorkbook["Words"]
+    Globals.clearSheet(FrequencyWorkbook, "WordsIndexed")
+    wsFrequencyWordsIndexed = FrequencyWorkbook["WordsIndexed"]
+    # endregion
+
+    # region Sorting the words
+    words = {}
+    row = 2
+    while not Globals.isLastRow(wsFrequencyWords, row):
+        kanji = wsFrequencyWords.cell(row=row, column=2).value
+        words[kanji] = wsFrequencyWords.cell(row=row, column=1).value
+        row += 1
+
+    sortedKanjis = sorted(words.keys(), key=lambda x: convert_to_utf8(x))
+    row = 1
+    for item in sortedKanjis:
+        wsFrequencyWordsIndexed.cell(row=row, column=1).value = item
+        wsFrequencyWordsIndexed.cell(row=row, column=2).value = words[item]
+        row += 1
+    # endregion
+
+    # region Saving the results to xlsx & csv
+    if update_workbooks:
+        FrequencyWorkbook.save(filename=f'{Globals.MASTER_DIR}/Frequencies.xlsx')
+
+    Globals.create_csv_from_worksheet(wsFrequencyWordsIndexed, name("FrequenciesIndexed"), idx("A"), idx("B"), False, 1)
+    # endregion
+
 if prepare_grammar_db:
     # region Reading worksheets
+    content_freq = Globals.get_file_contents(os.path.join(Globals.JAPAGRAM_ASSETS_DIR, 'LineFrequencies - 3000 kanji.csv')).split('\n')
+    freq_dict = {}
+    for i in range(len(content_freq)):
+        if content_freq[i].strip() not in freq_dict.keys(): freq_dict[content_freq[i].strip()] = i + 1
+
     GrammarWorkbook = openpyxl.load_workbook(filename=f'{Globals.OUTPUT_DIR}/Grammar - 3000 kanji - with foreign.xlsx', data_only=True)
     print("Finished loading Grammar - 3000 kanji.xlsx")
 
@@ -74,7 +111,6 @@ if prepare_grammar_db:
     wsSortedIndexLatinEN = GrammarWorkbook["SortedIndexLatinEN"]
     wsSortedIndexLatinFR = GrammarWorkbook["SortedIndexLatinFR"]
     wsSortedIndexLatinES = GrammarWorkbook["SortedIndexLatinES"]
-
     # endregion
 
     # region Settings local parameters & functions
@@ -199,6 +235,20 @@ if prepare_grammar_db:
             if rowIndex % modulus == 0: print(f'Updated running index for {current_worksheet} - row {rowIndex}')
     # endregion
 
+    # region Updating the Frequency columns
+    for current_worksheet in [wsTypes, wsGrammar, wsVerbsForGrammar]:
+        rowIndex = 2
+        modulus = (4000 if current_worksheet != wsGrammar else 200)
+        while not Globals.isLastRow(current_worksheet, rowIndex):
+            if Globals.isIrrelevantRow(current_worksheet, rowIndex): continue
+            kanji = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_KANJI).value
+            if kanji:
+                freq = Converter.get_frequency_from_dict(kanji, freq_dict)
+                current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_FREQUENCY).value = freq
+            rowIndex += 1
+            if rowIndex % modulus == 0: print(f'Updated frequency for {current_worksheet} - row {rowIndex}')
+    # endregion
+
     # region Creating the index dicts and updating the worksheets
     for indexType in SECTIONS_DICT.keys():
         for current_worksheet in [wsTypes, wsGrammar, wsVerbsForGrammar]:
@@ -206,9 +256,6 @@ if prepare_grammar_db:
             rowIndex = 2
             modulus = (20000 if current_worksheet != wsGrammar else 200)
             while not Globals.isLastRow(current_worksheet, rowIndex):
-
-                if 'teniir' in current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_ROMAJI).value:
-                    a = 1
                 runningIndex = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_INDEX).value
                 if rowIndex % modulus == 0: print(f"Creating {indexType} Index for {current_worksheet} - row {rowIndex}")
                 if Globals.isIrrelevantRow(current_worksheet, rowIndex): continue
@@ -332,13 +379,13 @@ if prepare_grammar_db:
     Globals.create_csv_from_worksheet(wsMeaningsEN, name("Meanings"), idx("A"), idx("H"))
     Globals.create_csv_from_worksheet(wsMeaningsFR, name("MeaningsFR"), idx("A"), idx("H"))
     Globals.create_csv_from_worksheet(wsMeaningsES, name("MeaningsES"), idx("A"), idx("H"))
-    Globals.create_csv_from_worksheet(wsTypes, name("Types"), idx("A"), idx("P"))
-    Globals.create_csv_from_worksheet(wsGrammar, name("Grammar"), idx("A"), idx("P"))
+    Globals.create_csv_from_worksheet(wsTypes, name("Types"), idx("A"), idx("R"))
+    Globals.create_csv_from_worksheet(wsGrammar, name("Grammar"), idx("A"), idx("R"))
     Globals.create_csv_from_worksheet(wsMultExplEN, name("MultExplEN"), idx("A"), idx("D"))
     Globals.create_csv_from_worksheet(wsMultExplFR, name("MultExplFR"), idx("A"), idx("D"))
     Globals.create_csv_from_worksheet(wsMultExplES, name("MultExplES"), idx("A"), idx("D"))
     Globals.create_csv_from_worksheet(wsExamples, name("Examples"), idx("A"), idx("F"))
-    Globals.create_csv_from_worksheet(wsVerbsForGrammar, name("VerbsForGrammar"), idx("A"), idx("S"))
+    Globals.create_csv_from_worksheet(wsVerbsForGrammar, name("VerbsForGrammar"), idx("A"), idx("R"))
     # endregion
 
 if prepare_conj_lengths:
@@ -760,36 +807,4 @@ if prepare_conj_db:
 
     Globals.create_csv_from_worksheet(wsLatinConjIndex, name("VerbConjLatinSortedIndex"), idx("A"), idx("B"))
     Globals.create_csv_from_worksheet(wsKanjiConjIndex, name("VerbConjKanjiSortedIndex"), idx("A"), idx("B"))
-    # endregion
-
-if prepare_frequency_db:
-    # region Reading worksheets
-    FrequencyWorkbook = openpyxl.load_workbook(filename=f'{Globals.MASTER_DIR}/Frequencies.xlsx', data_only=True)
-    print("Finished loading Frequencies.xlsx")
-    wsFrequencyWords = FrequencyWorkbook["Words"]
-    Globals.clearSheet(FrequencyWorkbook, "WordsIndexed")
-    wsFrequencyWordsIndexed = FrequencyWorkbook["WordsIndexed"]
-    # endregion
-
-    # region Sorting the words
-    words = {}
-    row = 2
-    while not Globals.isLastRow(wsFrequencyWords, row):
-        kanji = wsFrequencyWords.cell(row=row, column=2).value
-        words[kanji] = wsFrequencyWords.cell(row=row, column=1).value
-        row += 1
-
-    sortedKanjis = sorted(words.keys(), key=lambda x: convert_to_utf8(x))
-    row = 1
-    for item in sortedKanjis:
-        wsFrequencyWordsIndexed.cell(row=row, column=1).value = item
-        wsFrequencyWordsIndexed.cell(row=row, column=2).value = words[item]
-        row += 1
-    # endregion
-
-    # region Saving the results to xlsx & csv
-    if update_workbooks:
-        FrequencyWorkbook.save(filename=f'{Globals.MASTER_DIR}/Frequencies.xlsx')
-
-    Globals.create_csv_from_worksheet(wsFrequencyWordsIndexed, name("FrequenciesIndexed"), idx("A"), idx("B"), False, 1)
     # endregion

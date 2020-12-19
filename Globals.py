@@ -1,5 +1,4 @@
-
-from openpyxl.utils.cell import coordinate_from_string, column_index_from_string
+from openpyxl.utils.cell import column_index_from_string
 
 
 def get_file_contents(filename):
@@ -37,6 +36,7 @@ TYPES_COL_KW_FR = 14
 TYPES_COL_MEANINGS_ES = 15
 TYPES_COL_KW_ES = 16
 TYPES_COL_HIRAGANA_FIRST_CHAR = 17
+TYPES_COL_FREQUENCY = 18
 
 MEANINGS_COL_INDEX = 1
 MEANINGS_COL_MEANING = 2
@@ -86,6 +86,7 @@ EXT_WORD_COL_ALTS = 5
 EXT_WORD_COL_MEANINGS_EN = 6
 EXT_WORD_COL_MEANINGS_FR = 7
 EXT_WORD_COL_MEANINGS_ES = 8
+EXT_WORD_COL_FREQUENCY = 9
 
 NAMES_COL_INDEX = 1
 NAMES_COL_ROMAJI = 2

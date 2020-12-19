@@ -10,6 +10,7 @@ lineFiles = [f for f in listdir(Globals.JAPAGRAM_ASSETS_DIR) if os.path.isfile(o
 
 data = OrderedDict()
 for lineFile in lineFiles:
+    if 'LineFrequencies' in lineFile: continue
     content = Globals.get_file_contents(os.path.join(Globals.JAPAGRAM_ASSETS_DIR, lineFile))
     lines = content.split('\n')
 
@@ -20,7 +21,7 @@ for lineFile in lineFiles:
     sql_content = 'DROP TABLE IF EXISTS ' + table_name + ';\n'
     sql_content += 'CREATE TABLE IF NOT EXISTS ' + table_name + ' (\n'
     if 'ExtendedDbWords' in table_name:
-        column_names = ["Index", "romaji", "kanji", "POS", "altSpellings", "meaningsEN", "meaningsFR", "meaningsES"]
+        column_names = ["Index", "romaji", "kanji", "POS", "altSpellings", "meaningsEN", "meaningsFR", "meaningsES", "Frequency"]
         sql_content += '`' + column_names[0].replace(' ', '_').replace('\\', '\\\\') + '` TEXT CHARACTER SET utf8,\n'
         start_row = 0
     elif 'Extended' in lineFile and 'Index' in table_name:

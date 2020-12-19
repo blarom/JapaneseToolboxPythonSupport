@@ -4,7 +4,7 @@ import re
 import openpyxl
 
 import Globals
-from Converter import Converter
+import Converter
 
 def main():
     current_entry = ''
@@ -30,8 +30,6 @@ def main():
             self.french_meanings = french_meanings
             self.spanish_meanings = spanish_meanings
 
-
-    converter = Converter()
     # endregion
 
     # region Filling the foreign words list
@@ -73,7 +71,7 @@ def main():
                         and not (len(french_meanings) == 0 and len(spanish_meanings) == 0):
                     word = Word(kanji,
                                 hiragana,
-                                converter.get_latin_hiragana_katakana(hiragana)[converter.TYPE_LATIN],
+                                Converter.getOfficialWaapuroOnly(hiragana),
                                 french_meanings,
                                 spanish_meanings)
                     words.append(word)

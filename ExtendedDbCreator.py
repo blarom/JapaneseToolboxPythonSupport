@@ -2,17 +2,21 @@
 
 # Windows Powershell grep:
 # Select-String -Path .\JMdict.xml -Pattern "CNET" -Context 4,4
-
+import os
 import re
 import openpyxl
 
 import Globals
-from Converter import Converter
+import Converter
 
 
 def main():
     current_entry = ''
 
+    content_freq = Globals.get_file_contents(os.path.join(Globals.JAPAGRAM_ASSETS_DIR, 'LineFrequencies - 3000 kanji.csv')).split('\n')
+    freq_dict = {}
+    for i in range(len(content_freq)):
+        if content_freq[i].strip() not in freq_dict.keys(): freq_dict[content_freq[i].strip()] = i + 1
     VERB_PARTS_OF_SPEECH = ['Vrui', 'Vbu', 'Vgu', 'Vku', 'Vmu', 'Vnu', 'Vrug', 'Vsu', 'Vtsu', 'Vu', 'Vi', 'Viku', 'Vus', 'Varu', 'Vkuru', 'Vsuru']
     LEGEND_DICT = {
         'MA': 'ZM',
@@ -241,8 +245,6 @@ def main():
             self.types_for_word = types_for_word
             self.common = common
 
-    converter = Converter()
-
     def add_index_to_dict(index_dict, index, key):
         if key in index_dict.keys():
             indexes = index_dict[key]
@@ -305,11 +307,11 @@ def main():
                 romaji = ''
                 if len(kanas) > 0:
                     hiragana = kanas[0]
-                    romaji = converter.get_latin_hiragana_katakana(hiragana)[converter.TYPE_LATIN]
+                    romaji = Converter.getOfficialWaapuroOnly(hiragana)
                     if kanji == '': kanji = hiragana
 
                     for i in range(1, len(kanas)):
-                        altSpellingRomaji = converter.get_latin_hiragana_katakana(kanas[i])[converter.TYPE_LATIN]
+                        altSpellingRomaji = Converter.getOfficialWaapuroOnly(kanas[i])
                         if altSpellingRomaji != romaji:
                             altSpellings.append(altSpellingRomaji.replace('・', ''))
                 # endregion
@@ -586,7 +588,8 @@ def main():
     wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_MEANINGS_EN).value = "meaningsEN"
     wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_MEANINGS_FR).value = "meaningsFR"
     wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_MEANINGS_ES).value = "meaningsES"
-    wsExtendedWordsCSV_rows = ['|'.join(["Index", "romaji", "kanji", "POS", "altSpellings", "meaningsEN", "meaningsFR", "meaningsES"]) + '|']
+    wsExtendedWords.cell(row=1, column=Globals.EXT_WORD_COL_FREQUENCY).value = "Frequency"
+    wsExtendedWordsCSV_rows = ['|'.join(["Index", "romaji", "kanji", "POS", "altSpellings", "meaningsEN", "meaningsFR", "meaningsES", "Frequency"]) + '|']
     row_index = 2
     romaji_index_dict = {}
     english_index_dict = {}
@@ -601,6 +604,7 @@ def main():
         meaningsEN = '#'.join(word.english_meanings).replace('|', '-')
         meaningsFR = '#'.join(word.french_meanings).replace('|', '-')
         meaningsES = '#'.join(word.spanish_meanings).replace('|', '-')
+        freq = Converter.get_frequency_from_dict(word.kanji, freq_dict)
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_INDEX).value = row_index
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_ROMAJI).value = word.romaji
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_KANJI).value = word.kanji
@@ -609,8 +613,9 @@ def main():
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_MEANINGS_EN).value = meaningsEN
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_MEANINGS_FR).value = meaningsFR
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_MEANINGS_ES).value = meaningsES
+        wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_FREQUENCY).value = freq
 
-        wsExtendedWordsCSV_rows.append('|'.join([str(row_index), word.romaji, word.kanji, types, altS, meaningsEN, meaningsFR, meaningsES]) + '|')
+        wsExtendedWordsCSV_rows.append('|'.join([str(row_index), word.romaji, word.kanji, types, altS, meaningsEN, meaningsFR, meaningsES, freq]) + '|')
 
         add_index_to_dict(romaji_index_dict, str(row_index), word.romaji)
         add_index_to_dict(kanji_index_dict, str(row_index), Globals.convert_to_utf8(word.kanji))
