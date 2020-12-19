@@ -144,6 +144,7 @@ def add_dollar(text):
     text = re.sub(r'\$\$', '$', text)
     text = re.sub(r'([:,;?!\[])(\s*)([a-z])', r'\g<1>\g<2>$\g<3>', text)
     text = re.sub(r'([:,;?!\[])(\s*)\$([a-z]\w+)\(', r'\g<1>\g<2>\g<3>(', text)
+    text = re.sub(r'(\w+\()\$(\w+\([^)]*\)\s*\))', r'\g<1>\g<2>', text)
     return text
 
 
@@ -166,7 +167,7 @@ def add_dollars_in_text_incl_quotes(text):
     text = re.sub(r'\$(null|return|true|false|default|new|continue|try|catch|finally|echo'
                   r'|contains|listContains|array|array_push|array_slice|array_fill|array_key_exists'
                   r'|substr|mb_substr|mb_strlen|preg_replace|str_replace|trim|strtolower|strtoupper|sizeof'
-                  r'|explode|implode|get[A-Z]\w+)\b', r'\g<1>', text)
+                  r'|explode|implode)\b', r'\g<1>', text)
     return text
 
 
@@ -297,6 +298,8 @@ def main():
 
             # application-specific keywords
             line_new = re.sub(r'OverridableUtilitiesGeneral.joinList', 'implode', line_new)
+            line_new = re.sub(r'OverridableUtilitiesGeneral.joinArray', 'implode', line_new)
+            line_new = re.sub(r'OverridableUtilitiesGeneral\.', '', line_new)
             line_new = re.sub(r'OverridableUtilities\w+\.', '', line_new)
             line_new = re.sub(r'Utilities\w+\.', '', line_new)
             line_new = re.sub(r'Character.toString\(', '(', line_new)
@@ -422,6 +425,7 @@ def main():
                 line_new = re.sub(r'new (LinkedList<>|ArrayList<>|HashMap<>|StringBuilder)', 'array', line_new)
 
             line_new = re.sub(r'};', r');', line_new)
+            line_new = re.sub(r'}\);', r'));', line_new)
             line_new = re.sub(r'([^.\s]+)\.put\(([^,]+),([^,]+)\)', r'\g<1>[\g<2>] = \g<3>', line_new)
 
             if '{' in line_new:
@@ -452,8 +456,11 @@ def main():
             line_new = re.sub(r'\.(is\w+)\(\)', r'->\g<1>', line_new)
 
             # object manipulations
+            if '  List<String> parsed_cumulative_meaning_value = Arrays.asList(OverridableUtilitiesGeneral.splitAtCommasOutsideParentheses(input_list));' in line_old:
+                a=1
             # line_new = re.sub(r'([\w$]+)\.length\b[^(]', r'sizeof(\g<1>)', line_new)
-            line_new = re.sub(r'Arrays.asList\s*(\(.+split.+\))', r'\g<1>', line_new)
+            line_new = re.sub(r'Arrays.asList\s*(\(.*split.*\))', r'\g<1>', line_new)
+            line_new = re.sub(r'addAll\(Arrays.asList\s*', r'addAll(', line_new)
             line_new = re.sub(r'Arrays.asList\s*', r'array', line_new)
             line_new = re.sub(r'\b[A-Z][\w.]+\.([A-Z]\w+)\b', r'\g<1>', line_new)
 
