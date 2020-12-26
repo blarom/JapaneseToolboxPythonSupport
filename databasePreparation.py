@@ -27,7 +27,7 @@ prepare_conj_lengths = True
 prepare_names_db = False
 prepare_kanji_db = False
 prepare_conj_db = False  # Not used, resulting db is too big to be useful
-prepare_frequency_db = False
+prepare_frequency_db = True
 update_workbooks = True
 
 prepare_db_for_release = True
@@ -38,7 +38,7 @@ if prepare_db_for_release:
     prepare_conj_lengths = True
     prepare_names_db = False
     prepare_kanji_db = False
-    prepare_frequency_db = False
+    prepare_frequency_db = True
     update_workbooks = True
 
 if prepare_foreign_meanings:
@@ -66,6 +66,7 @@ if prepare_frequency_db:
     for item in sortedKanjis:
         wsFrequencyWordsIndexed.cell(row=row, column=1).value = item
         wsFrequencyWordsIndexed.cell(row=row, column=2).value = words[item]
+        Globals.FREQ_DICT[item] = words[item]
         row += 1
     # endregion
 
@@ -73,16 +74,11 @@ if prepare_frequency_db:
     if update_workbooks:
         FrequencyWorkbook.save(filename=f'{Globals.MASTER_DIR}/Frequencies.xlsx')
 
-    Globals.create_csv_from_worksheet(wsFrequencyWordsIndexed, name("FrequenciesIndexed"), idx("A"), idx("B"), False, 1)
+    #Globals.create_csv_from_worksheet(wsFrequencyWordsIndexed, name("FrequenciesIndexed"), idx("A"), idx("B"), False, 1)
     # endregion
 
 if prepare_grammar_db:
     # region Reading worksheets
-    content_freq = Globals.get_file_contents(os.path.join(Globals.JAPAGRAM_ASSETS_DIR, 'LineFrequencies - 3000 kanji.csv')).split('\n')
-    freq_dict = {}
-    for i in range(len(content_freq)):
-        if content_freq[i].strip() not in freq_dict.keys(): freq_dict[content_freq[i].strip()] = i + 1
-
     GrammarWorkbook = openpyxl.load_workbook(filename=f'{Globals.OUTPUT_DIR}/Grammar - 3000 kanji - with foreign.xlsx', data_only=True)
     print("Finished loading Grammar - 3000 kanji.xlsx")
 
@@ -243,7 +239,7 @@ if prepare_grammar_db:
             if Globals.isIrrelevantRow(current_worksheet, rowIndex): continue
             kanji = current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_KANJI).value
             if kanji:
-                freq = Converter.get_frequency_from_dict(kanji, freq_dict)
+                freq = Converter.get_frequency_from_dict(kanji)
                 current_worksheet.cell(row=rowIndex, column=Globals.TYPES_COL_FREQUENCY).value = freq
             rowIndex += 1
             if rowIndex % modulus == 0: print(f'Updated frequency for {current_worksheet} - row {rowIndex}')

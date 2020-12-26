@@ -241,6 +241,7 @@ SYMBOLS_ALPHABET = ". ,()/1234567890'^[];…!?-+*&:%$«»¿\"？"
 WORD_LENGTH_THRESHOLD = 3
 SECTION_LENGTH_THRESHOLD = 15
 
+FREQ_DICT = {}
 
 
 def is_latin(text):

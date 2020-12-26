@@ -15,6 +15,7 @@ REPLACEMENT_FUNCTIONS = {
     'startsWith': ['startsWith(', 'caller', ', ', 'arguments', ')'],
     'endsWith': ['endsWith(', 'caller', ', ', 'arguments', ')'],
     'append': ['array_push(', 'caller', ', ', 'arguments', ')'],
+    'remove': ['caller', ' = array_diff(', 'caller', ', array(', 'arguments', '))'],
     'replaceAll': ['preg_replace(', 'arguments', ', ', 'caller', ')'],
     'replace': ['str_replace(', 'arguments', ', ', 'caller', ')'],
     'subList': ['array_slice(', 'caller', ', ', 'arguments', ')'],
@@ -165,7 +166,7 @@ def add_dollars_in_text_incl_quotes(text):
         text = '"'.join(new_line_parts)
 
     text = re.sub(r'\$(null|return|true|false|default|new|continue|try|catch|finally|echo'
-                  r'|contains|listContains|array|array_push|array_slice|array_fill|array_key_exists'
+                  r'|contains|listContains|array|array_push|array_diff|array_slice|array_fill|array_key_exists'
                   r'|substr|mb_substr|mb_strlen|preg_replace|str_replace|trim|strtolower|strtoupper|sizeof'
                   r'|explode|implode)\b', r'\g<1>', text)
     return text
@@ -223,13 +224,13 @@ def convert_caller_and_arguments(text, last_line_caller):
                     function_converted += caller
                 elif item == 'arguments':
                     if java_function == 'replaceAll':
-                        arguments_converted = f'"{chosen_preg_replace_key}"+' + arguments_converted
+                        arguments_converted = f'"{chosen_preg_replace_key}".' + arguments_converted
                         arguments_separator_comma_index = find_complementary_char_index(',', 0, 'right', arguments_converted)
                         arguments_converted_pre = arguments_converted[:arguments_separator_comma_index]
-                        arguments_converted_mid = f'+"{chosen_preg_replace_key}"'
+                        arguments_converted_mid = f'."{chosen_preg_replace_key}"'
                         arguments_converted_post = arguments_converted[arguments_separator_comma_index:]
                         arguments_converted = arguments_converted_pre + arguments_converted_mid + arguments_converted_post
-                    arguments_converted = arguments_converted.replace('"+"', '')
+                    arguments_converted = arguments_converted.replace('"."', '')
                     arguments_converted = arguments_converted.replace('\\\\', '\\')
                     function_converted += arguments_converted
                 else:
@@ -496,6 +497,7 @@ def main():
             line_new = re.sub(r'catch\s*\((\$[a-z])', r'catch (Exception \g<1>', line_new)
             line_new = re.sub(r'catch\s*\(Exception ([a-z])', r'catch (Exception $\g<1>', line_new)
             line_new = re.sub(r'->\$', r'->', line_new)
+            line_new = re.sub(r'\(\$(\w+)\(', r'(\g<1>(', line_new)
 
             # removing class closing bracket
             line_new = re.sub(r'^}', r'', line_new)

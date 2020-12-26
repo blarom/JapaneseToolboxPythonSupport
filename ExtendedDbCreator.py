@@ -12,11 +12,6 @@ import Converter
 
 def main():
     current_entry = ''
-
-    content_freq = Globals.get_file_contents(os.path.join(Globals.JAPAGRAM_ASSETS_DIR, 'LineFrequencies - 3000 kanji.csv')).split('\n')
-    freq_dict = {}
-    for i in range(len(content_freq)):
-        if content_freq[i].strip() not in freq_dict.keys(): freq_dict[content_freq[i].strip()] = i + 1
     VERB_PARTS_OF_SPEECH = ['Vrui', 'Vbu', 'Vgu', 'Vku', 'Vmu', 'Vnu', 'Vrug', 'Vsu', 'Vtsu', 'Vu', 'Vi', 'Viku', 'Vus', 'Varu', 'Vkuru', 'Vsuru']
     LEGEND_DICT = {
         'MA': 'ZM',
@@ -604,7 +599,7 @@ def main():
         meaningsEN = '#'.join(word.english_meanings).replace('|', '-')
         meaningsFR = '#'.join(word.french_meanings).replace('|', '-')
         meaningsES = '#'.join(word.spanish_meanings).replace('|', '-')
-        freq = Converter.get_frequency_from_dict(word.kanji, freq_dict)
+        freq = Converter.get_frequency_from_dict(word.kanji)
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_INDEX).value = row_index
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_ROMAJI).value = word.romaji
         wsExtendedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_KANJI).value = word.kanji

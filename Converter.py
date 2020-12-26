@@ -281,17 +281,17 @@ def getOfficialWaapuroOnly(kana):
     return romanizedKanaWaapuro
 
 
-def get_frequency_from_dict(kanji, freq_dict):
+def get_frequency_from_dict(kanji):
     freq = '0'
     if kanji == "為る":
-        freq = str(freq_dict["する"])
+        freq = str(Globals.FREQ_DICT["する"])
     elif kanji:
         key = kanji.replace("～", "")
         key = re.sub(r"する$", "", key)
-        if key in freq_dict.keys():
-            freq = str(freq_dict[key])
+        if key in Globals.FREQ_DICT.keys():
+            freq = str(Globals.FREQ_DICT[key])
         else:
             key = getOfficialKana(key)[0]
-            if key in freq_dict.keys():
-                freq = str(freq_dict[key])
+            if key in Globals.FREQ_DICT.keys():
+                freq = str(Globals.FREQ_DICT[key])
     return freq
