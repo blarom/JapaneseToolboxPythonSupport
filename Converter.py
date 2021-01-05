@@ -60,7 +60,10 @@ def getOfficialKana(inputText):
                     or (currentChar == "ee")
                     or (currentChar == "oo")):
                 continue
+            old = transliteratedToHiragana
             transliteratedToHiragana = transliteratedToHiragana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_HIRA][i])
+            if transliteratedToHiragana != old:
+                a=1
             transliteratedToKatakana = transliteratedToKatakana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_KATA][i])
 
         # If there are leftover double-vowels, only then should they be replaced
@@ -295,3 +298,7 @@ def get_frequency_from_dict(kanji):
             if key in Globals.FREQ_DICT.keys():
                 freq = str(Globals.FREQ_DICT[key])
     return freq
+
+a = getOfficialKana("fairu")[1]
+a = getOfficialWaapuroOnly('ああああ')
+b=2

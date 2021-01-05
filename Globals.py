@@ -327,3 +327,31 @@ def get_root_from_masu_stem_kanji(kanjiStem, family):
         return kanjiStem[:-2]
     else:
         return kanjiStem
+
+
+class Word:
+    def __init__(self,
+                 kanji='',
+                 altSpellings=None,
+                 hiragana='',
+                 romaji='',
+                 english_meanings=None,
+                 french_meanings=None,
+                 spanish_meanings=None,
+                 types_for_word=None,
+                 common=False):
+        if altSpellings is None: altSpellings = []
+        if types_for_word is None: types_for_word = []
+        if english_meanings is None: english_meanings = []
+        if french_meanings is None: french_meanings = []
+        if spanish_meanings is None: spanish_meanings = []
+        self.kanji = kanji
+        self.altSpellings = altSpellings
+        self.hiragana = hiragana
+        self.romaji = romaji
+        self.uniqueID = romaji + "zzz" + kanji
+        self.english_meanings = english_meanings
+        self.french_meanings = french_meanings
+        self.spanish_meanings = spanish_meanings
+        self.types_for_word = types_for_word
+        self.common = common

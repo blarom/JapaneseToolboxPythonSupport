@@ -207,38 +207,13 @@ def main():
     wsLocalVerbsForGrammar = localVerbsWorkbook["VerbsForGrammar"]
     wsLocalVerbs = localVerbsWorkbook["Verbs"]
     wsExtendedWords = extendedWordsWorkbook["Words"]
+    wsExtendedSkippedWords = extendedWordsWorkbook["SkippedWords"]
     wsExtendedWordsRomajiIndex = extendedWordsWorkbook["RomajiIndex"]
     wsExtendedWordsEnglishIndex = extendedWordsWorkbook["EnglishIndex"]
     wsExtendedWordsFrenchIndex = extendedWordsWorkbook["FrenchIndex"]
     wsExtendedWordsSpanishIndex = extendedWordsWorkbook["SpanishIndex"]
     wsExtendedWordsKanjiIndex = extendedWordsWorkbook["KanjiIndex"]
 
-    class Word:
-        def __init__(self,
-                     kanji='',
-                     altSpellings=None,
-                     hiragana='',
-                     romaji='',
-                     english_meanings=None,
-                     french_meanings=None,
-                     spanish_meanings=None,
-                     types_for_word=None,
-                     common=False):
-            if altSpellings is None: altSpellings = []
-            if types_for_word is None: types_for_word = []
-            if english_meanings is None: english_meanings = []
-            if french_meanings is None: french_meanings = []
-            if spanish_meanings is None: spanish_meanings = []
-            self.kanji = kanji
-            self.altSpellings = altSpellings
-            self.hiragana = hiragana
-            self.romaji = romaji
-            self.uniqueID = romaji + "zzz" + kanji
-            self.english_meanings = english_meanings
-            self.french_meanings = french_meanings
-            self.spanish_meanings = spanish_meanings
-            self.types_for_word = types_for_word
-            self.common = common
 
     def add_index_to_dict(index_dict, index, key):
         if key in index_dict.keys():
@@ -289,6 +264,11 @@ def main():
                 # region Getting the basic characteristics
                 kanjis = re.findall(r"<keb>(.+?)</keb>", current_entry, re.U)
                 if len(kanjis) > 0:
+                    # if kanjis[0] == '全権':
+                    #     a=1
+                    # else:
+                    #     current_entry = ''
+                    #     continue
                     kanji = kanjis[0]
                     altSpellings = []
                     for i in range(1, len(kanjis)):
@@ -302,6 +282,11 @@ def main():
                 romaji = ''
                 if len(kanas) > 0:
                     hiragana = kanas[0]
+                    # if hiragana == 'アルファベット':
+                    #     a=1
+                    # else:
+                    #     current_entry = ''
+                    #     continue
                     romaji = Converter.getOfficialWaapuroOnly(hiragana)
                     if kanji == '': kanji = hiragana
 
@@ -316,8 +301,8 @@ def main():
                 # match = re.search(r"<ke_pri>(news1|news2|ichi1|ichi2|spec1|spec2|gai1|gai2)</ke_pri>", current_entry)
                 if match:
                     common = True
-                    current_entry = ''
-                    continue
+                    #current_entry = ''
+                    #continue
                 else:
                     common = False
                 # endregion
@@ -487,7 +472,7 @@ def main():
                         and len(english_meanings_for_word) > 0 \
                         and '*' not in romaji:
 
-                    word = Word(kanji,
+                    word = Globals.Word(kanji,
                                 altSpellings,
                                 hiragana.replace('・', ''),
                                 romaji.replace('・', ''),
@@ -560,16 +545,19 @@ def main():
 
             romaji = romaji.replace(' ', '')
             kanji = kanji.replace('～', '')
-            localWordsList.append(Word(kanji=kanji, romaji=romaji))
+            localWordsList.append(Globals.Word(kanji=kanji, romaji=romaji))
 
             typesIndex += 1
 
     newWords = []
+    skippedWords = []
     localWordsList.sort(key=lambda x: x.uniqueID)
     for word in jmDictWordsList:
         index_of_first_hit = binary_search(localWordsList, word.uniqueID)
         if index_of_first_hit == -1:
             newWords.append(word)
+        else:
+            skippedWords.append(word)
 
     # endregion
 
@@ -660,6 +648,35 @@ def main():
 
         row_index += 1
 
+    row_index = 2
+    romaji_index_dict = {}
+    english_index_dict = {}
+    french_index_dict = {}
+    spanish_index_dict = {}
+    kanji_index_dict = {}
+    wsExtendedSkippedWordsCSV_rows = ['|'.join(["Index", "romaji", "kanji", "POS", "altSpellings", "meaningsEN", "meaningsFR", "meaningsES", "Frequency"]) + '|']
+    for word in skippedWords:
+        if word.romaji == '' or word.kanji == '': continue
+
+        types = '#'.join(word.types_for_word)
+        altS = '#'.join(word.altSpellings)
+        meaningsEN = '#'.join(word.english_meanings).replace('|', '-')
+        meaningsFR = '#'.join(word.french_meanings).replace('|', '-')
+        meaningsES = '#'.join(word.spanish_meanings).replace('|', '-')
+        freq = Converter.get_frequency_from_dict(word.kanji)
+        wsExtendedSkippedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_INDEX).value = row_index
+        wsExtendedSkippedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_ROMAJI).value = word.romaji
+        wsExtendedSkippedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_KANJI).value = word.kanji
+        wsExtendedSkippedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_POS).value = types
+        wsExtendedSkippedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_ALTS).value = altS
+        wsExtendedSkippedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_MEANINGS_EN).value = meaningsEN
+        wsExtendedSkippedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_MEANINGS_FR).value = meaningsFR
+        wsExtendedSkippedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_MEANINGS_ES).value = meaningsES
+        wsExtendedSkippedWords.cell(row=row_index, column=Globals.EXT_WORD_COL_FREQUENCY).value = freq
+
+        wsExtendedSkippedWordsCSV_rows.append('|'.join([str(row_index), word.romaji, word.kanji, types, altS, meaningsEN, meaningsFR, meaningsES, freq]) + '|')
+
+        row_index += 1
     # endregion
 
     # region Creating the indexes
@@ -733,4 +750,6 @@ def main():
         f_out.write('\n'.join(wsExtendedWordsFrenchIndexCSV_rows))
     with open(base + 'SpanishIndex.csv', 'w', encoding='utf-8') as f_out:
         f_out.write('\n'.join(wsExtendedWordsSpanishIndexCSV_rows))
+    with open(f'C:/Users/Bar/Dropbox/Japanese/ExtendedSkipped.csv', 'w', encoding='utf-8') as f_out:
+        f_out.write('\n'.join(wsExtendedSkippedWordsCSV_rows))
     # endregion

@@ -11,12 +11,12 @@ from Globals import *
 
 prepare_foreign_meanings = False
 prepare_grammar_db = False
-prepare_extended_db = False
+prepare_extended_db = True
 prepare_conj_lengths = False
 prepare_names_db = False
 prepare_kanji_db = False
 prepare_conj_db = False  # Not used, resulting db is too big to be useful
-prepare_frequency_db = False
+prepare_frequency_db = True
 update_workbooks = False
 prepare_db_for_release = False
 
