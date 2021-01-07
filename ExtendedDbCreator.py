@@ -498,38 +498,22 @@ def main():
     localWordsList = []
     jmDictWordsList = list(words)
     jmDictWordsList.sort(key=lambda x: x.uniqueID)
-    sheetNum_types = 0
-    sheetNum_grammar = 1
-    sheetNum_verbs = 2
 
-    for sheetNum in range(0, 3):
+    for (sheet, typesIndex) in [('Grammar', 2), ('Verbs', 4)]:
 
-        if sheetNum == sheetNum_types:
-            typesIndex = 2
-            workingWorksheet = wsLocalTypes
-        elif sheetNum == sheetNum_grammar:
-            typesIndex = 2
-            workingWorksheet = wsLocalGrammar
-        elif sheetNum == sheetNum_verbs:
-            typesIndex = 4
-            workingWorksheet = wsLocalVerbs
-        else:
-            typesIndex = 2
-            workingWorksheet = wsLocalTypes
+        workingWorksheet = wsLocalGrammar if sheet == 'Grammar' else wsLocalVerbs
 
         while True:
 
             # region Row skip conditions
-            romaji = ""
-            kanji = ""
-            if sheetNum == sheetNum_types or sheetNum == sheetNum_grammar:
+            if sheet == 'Grammar':
                 romaji = workingWorksheet.cell(row=typesIndex, column=Globals.TYPES_COL_ROMAJI).value
                 kanji = workingWorksheet.cell(row=typesIndex, column=Globals.TYPES_COL_KANJI).value
 
                 if (romaji == "" or not romaji or romaji is None) or (kanji == "" or not kanji or kanji is None):
                     break
 
-            elif sheetNum == sheetNum_verbs:
+            else:
                 romaji = workingWorksheet.cell(row=typesIndex, column=Globals.VERBS_COL_ROMAJI).value
                 kanji = workingWorksheet.cell(row=typesIndex, column=Globals.VERBS_COL_KANJI).value
 
@@ -649,11 +633,6 @@ def main():
         row_index += 1
 
     row_index = 2
-    romaji_index_dict = {}
-    english_index_dict = {}
-    french_index_dict = {}
-    spanish_index_dict = {}
-    kanji_index_dict = {}
     wsExtendedSkippedWordsCSV_rows = ['|'.join(["Index", "romaji", "kanji", "POS", "altSpellings", "meaningsEN", "meaningsFR", "meaningsES", "Frequency"]) + '|']
     for word in skippedWords:
         if word.romaji == '' or word.kanji == '': continue
