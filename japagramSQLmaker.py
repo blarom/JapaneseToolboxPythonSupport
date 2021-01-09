@@ -4,8 +4,16 @@ from os import listdir
 from collections import OrderedDict
 import Globals
 
-SQL_PATH = r'C:\Projects\Workspace\Web\JT database'
-MAX_CHUNK_LENGTH = 2500000
+mode = 'production'
+#mode = 'localsql'
+
+if mode == 'localsql':
+    SQL_PATH = r'C:\Projects\Workspace\Web\JT database - local'
+    MAX_CHUNK_LENGTH = 100000
+else:
+    SQL_PATH = r'C:\Projects\Workspace\Web\JT database'
+    MAX_CHUNK_LENGTH = 2500000
+
 lineFiles = [f for f in listdir(Globals.JAPAGRAM_ASSETS_DIR) if os.path.isfile(os.path.join(Globals.JAPAGRAM_ASSETS_DIR, f))]
 
 data = OrderedDict()
@@ -16,6 +24,7 @@ for lineFile in lineFiles:
 
     if 'Extended' in lineFile: table_name = '`jt_' + lineFile.split('-')[0][4:-1] + lineFile.split('-')[1][1:-4] + '`'
     else:  table_name = '`jt_' + lineFile[4:].split('-')[0][:-1] + '`'
+    table_name = table_name.lower()
 
     # Creating the columns
     sql_content = 'DROP TABLE IF EXISTS ' + table_name + ';\n'
@@ -65,7 +74,7 @@ for lineFile in lineFiles:
 
     sheet = [column_names]
     sql_content += ',\n'.join(['`' + column_names[i].replace(' ', '_').replace('\\', '\\\\') + '` TEXT CHARACTER SET utf8'
-                               for i in range(1, len(column_names)) if (start_row == 0 or i < len(column_names) - 1)]) + ');\n'
+                               for i in range(1, len(column_names)) if (start_row == 0 or i < len(column_names))]) + ');\n'
 
     # Creating the rows
     insert_line = 'INSERT INTO ' + table_name + ' VALUES\n'

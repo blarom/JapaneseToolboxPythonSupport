@@ -15,7 +15,7 @@ REPLACEMENT_FUNCTIONS = {
     'startsWith': ['startsWith(', 'caller', ', ', 'arguments', ')'],
     'endsWith': ['endsWith(', 'caller', ', ', 'arguments', ')'],
     'append': ['array_push(', 'caller', ', ', 'arguments', ')'],
-    'remove': ['caller', ' = array_diff(', 'caller', ', array(', 'arguments', '))'],
+    'remove': ['unset(', 'caller', '[', 'arguments', '])'],
     'replaceAll': ['preg_replace(', 'arguments', ', ', 'caller', ')'],
     'replace': ['str_replace(', 'arguments', ', ', 'caller', ')'],
     'subList': ['array_slice(', 'caller', ', ', 'arguments', ')'],

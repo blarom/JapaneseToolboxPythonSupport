@@ -244,11 +244,33 @@ SECTION_LENGTH_THRESHOLD = 15
 FREQ_DICT = {}
 
 
+class Font:
+    END = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    LIGHT_GREY = '\033[37m'
+    DEFAULT = '\033[39m'
+    DARK_GREY = '\033[90m'
+    LIGHT_RED = '\033[91m'
+    LIGHT_GREEN = '\033[92m'
+    LIGHT_YELLOW = '\033[93m'
+    LIGHT_BLUE = '\033[94m'
+    LIGHT_MAGENTA = '\033[95m'
+    LIGHT_CYAN = '\033[96m'
+    WHITE = '\033[97m'
+
+
 def is_latin(text):
     for char in list(text):
         if char in LATIN_CHAR_ALPHABET or char in LATIN_CHAR_ALPHABET_CAP:
             return True
-
 
 
 def remove_duplicates_keep_order(seq):
@@ -279,7 +301,7 @@ def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row=F
     content_lines = []
     index = start_row
     while not isLastRow(ws, index):
-        line = "|".join([str(ws.cell(row=index, column=col).value) if ws.cell(row=index, column=col).value is not None else "" for col in range(start_col, end_col+1)])
+        line = "|".join([str(ws.cell(row=index, column=col).value) if ws.cell(row=index, column=col).value is not None else "" for col in range(start_col, end_col + 1)])
         if line: content_lines.append(line)
         index += 1
         if only_first_row: break
@@ -288,10 +310,14 @@ def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row=F
 
 
 def isLastRow(sheet, index):
-    this_row_is_empty = all(not item for item in [sheet.cell(row=index, column=col).value for col in list(range(1, 10))+list(range(41, 50))])
-    next_row_is_empty = all(not item for item in [sheet.cell(row=index + 1, column=col).value for col in list(range(1, 10))+list(range(41, 50))])
-    col10_is_empty_from_next_row = all(not item for item in [sheet.cell(row=row, column=11).value for row in range(index+1, index + 31)])
+    this_row_is_empty = all(not item for item in [sheet.cell(row=index, column=col).value for col in list(range(1, 10)) + list(range(41, 50))])
+    next_row_is_empty = all(not item for item in [sheet.cell(row=index + 1, column=col).value for col in list(range(1, 10)) + list(range(41, 50))])
+    col10_is_empty_from_next_row = all(not item for item in [sheet.cell(row=row, column=11).value for row in range(index + 1, index + 31)])
     return this_row_is_empty and next_row_is_empty and col10_is_empty_from_next_row
+
+
+def get_cell_value(value):
+    return str(value) if (value == 1 or value == 0 or value) else ''
 
 
 def isIrrelevantRow(sheet, index):
