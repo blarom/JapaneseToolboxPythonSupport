@@ -502,6 +502,9 @@ def main():
             # removing class closing bracket
             line_new = re.sub(r'^}', r'', line_new)
 
+            # fixing function calls
+            line_new = re.sub(r'(\$\w+)\.(\w)', r'\g<1>->\g<2>', line_new)
+
             # removing extra empty lines
             if line_new or last_line: content_new.append(line_new)
             last_line = line_new
