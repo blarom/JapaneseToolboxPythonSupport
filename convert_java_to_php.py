@@ -230,6 +230,8 @@ def convert_caller_and_arguments(text, last_line_caller):
                         arguments_converted_mid = f'."{chosen_preg_replace_key}"'
                         arguments_converted_post = arguments_converted[arguments_separator_comma_index:]
                         arguments_converted = arguments_converted_pre + arguments_converted_mid + arguments_converted_post
+                    elif java_function == 'substring' and ',' not in arguments_converted:
+                        arguments_converted = '0, ' + arguments_converted
                     arguments_converted = arguments_converted.replace('"."', '')
                     arguments_converted = arguments_converted.replace('\\\\', '\\')
                     function_converted += arguments_converted
@@ -493,6 +495,7 @@ def main():
             line_new = re.sub(r'([^<>=\s]+)\s*=\s*\([\w<>.]+?\)\s*([\w<>.]+)', r'\g<1> = \g<2>', line_new)
 
             # adding $ to variables
+            line_new = re.sub(r'\b<([a-z])', r'<$\g<1>', line_new)
             line_new = add_dollars_in_text_incl_quotes(line_new)
             line_new = re.sub(r'catch\s*\((\$[a-z])', r'catch (Exception \g<1>', line_new)
             line_new = re.sub(r'catch\s*\(Exception ([a-z])', r'catch (Exception $\g<1>', line_new)
@@ -502,7 +505,7 @@ def main():
             # removing class closing bracket
             line_new = re.sub(r'^}', r'', line_new)
 
-            # fixing function calls
+            # final fixes
             line_new = re.sub(r'(\$\w+)\.(\w)', r'\g<1>->\g<2>', line_new)
 
             # removing extra empty lines
