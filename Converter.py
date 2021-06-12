@@ -63,7 +63,7 @@ def getOfficialKana(inputText):
             old = transliteratedToHiragana
             transliteratedToHiragana = transliteratedToHiragana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_HIRA][i])
             if transliteratedToHiragana != old:
-                a=1
+                a = 1
             transliteratedToKatakana = transliteratedToKatakana.replace(currentChar, ROMANIZATIONS[Globals.ROMANIZATIONS_KATA][i])
 
         # If there are leftover double-vowels, only then should they be replaced
@@ -299,6 +299,20 @@ def get_frequency_from_dict(kanji):
                 freq = str(Globals.FREQ_DICT[key])
     return freq
 
+
+def getTextType(text):
+    if not text: return Globals.TEXT_TYPE_LATIN
+    if re.search(r'^\d+$', text): return Globals.TEXT_TYPE_NUMBER
+    if re.search(r'^[' + Globals.LATIN_CHAR_ALPHABET + Globals.LATIN_CHAR_ALPHABET_CAP + r'\d\-]+$', text): return Globals.TEXT_TYPE_LATIN
+    if re.search(r'^' + Globals.KATAKANA_CHAR_ALPHABET + r'+$', text): return Globals.TEXT_TYPE_KATAKANA
+    if re.search(r'^[' + Globals.HIRAGANA_CHAR_ALPHABET + Globals.KATAKANA_CHAR_ALPHABET + r']+$', text): return Globals.TEXT_TYPE_HIRAGANA
+    return Globals.TEXT_TYPE_KANJI
+
+
+def getKanjiChars(text):
+    return ''.join([char for char in list(text) if getTextType(char) == Globals.TEXT_TYPE_KANJI])
+
+
 a = getOfficialKana("fairu")[1]
 a = getOfficialWaapuroOnly('ああああ')
-b=2
+b = 2

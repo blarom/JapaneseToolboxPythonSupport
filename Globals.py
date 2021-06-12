@@ -16,8 +16,14 @@ MASTER_DIR = 'C:/Users/Bar/Dropbox/Japanese'
 OUTPUT_DIR = 'C:/Projects/Workspace/JapaneseToolboxPythonSupport'
 JAPAGRAM_ASSETS_DIR = 'C:/Projects/Workspace/Japagram/app/src/main/assets'
 
-MAX_VERB_CONG_COL = "GI"
+MAX_VERB_CONG_COL = "GK"
 DELIMITER = ";"
+
+TEXT_TYPE_LATIN = 0
+TEXT_TYPE_HIRAGANA = 1
+TEXT_TYPE_KATAKANA = 2
+TEXT_TYPE_KANJI = 3
+TEXT_TYPE_NUMBER = 4
 
 TYPES_COL_INDEX = 1
 TYPES_COL_ROMAJI = 2
@@ -37,6 +43,7 @@ TYPES_COL_MEANINGS_ES = 15
 TYPES_COL_KW_ES = 16
 TYPES_COL_HIRAGANA_FIRST_CHAR = 17
 TYPES_COL_FREQUENCY = 18
+TYPES_COL_KANJI_FIRST_CHARS = 19
 
 MEANINGS_COL_INDEX = 1
 MEANINGS_COL_MEANING = 2
@@ -236,6 +243,9 @@ EDICT_EXCEPTIONS = [
 
 LATIN_CHAR_ALPHABET = "etaoinsrhdlcumwfgpybvkjxqzéóàüíáäêèãúôçâöñßùûîõìœëïòðåæþýøžš'"
 LATIN_CHAR_ALPHABET_CAP = LATIN_CHAR_ALPHABET.upper()
+HIRAGANA_CHAR_ALPHABET = "あいうえおかきくけこがぎぐげごさしすせそざじずぜぞたてとだでどちつづなぬねのんにはひふへほばびぶべぼぱぴぷぺぽまみむめもやゆよらりるれろわをゔっゐゑぢぁゃゅぅょぉぇぃ";
+KATAKANA_CHAR_ALPHABET = "アイウエオカキクケコガギグゲゴサシスセソザジズゼゾタテトダデドチツヅナニヌネノンハヒフヘホバビブベボパピプポペマミムメモヤユヨラリルレロワヲヴーッヰヱァャュゥォョェィ";
+KANA_CHAR_ALPHABET = HIRAGANA_CHAR_ALPHABET + KATAKANA_CHAR_ALPHABET
 NUMBER_ALPHABET = "1234567890'^"
 SYMBOLS_ALPHABET = ". ,()/1234567890'^[];…!?-+*&:%$«»¿\"？"
 WORD_LENGTH_THRESHOLD = 3
