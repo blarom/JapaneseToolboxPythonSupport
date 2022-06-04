@@ -1,7 +1,7 @@
 #!/usr/bin/python -tt
 
 # Windows Powershell grep:
-# Select-String -Path .\JMdict.xml -Pattern "CNET" -Context 4,4
+# Select-String -Path .\JMDict.xml.xml -Pattern "CNET" -Context 4,4
 import os
 import re
 import openpyxl
@@ -729,6 +729,6 @@ def main():
         f_out.write('\n'.join(wsExtendedWordsFrenchIndexCSV_rows))
     with open(base + 'SpanishIndex.csv', 'w', encoding='utf-8') as f_out:
         f_out.write('\n'.join(wsExtendedWordsSpanishIndexCSV_rows))
-    with open(f'C:/Users/Bar/Dropbox/Japanese/ExtendedSkipped.csv', 'w', encoding='utf-8') as f_out:
+    with open(base + f'ExtendedSkipped.csv', 'w', encoding='utf-8') as f_out:
         f_out.write('\n'.join(wsExtendedSkippedWordsCSV_rows))
     # endregion

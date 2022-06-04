@@ -30,7 +30,7 @@ prepare_conj_db = False  # Not used, resulting db is too big to be useful
 prepare_frequency_db = True
 update_workbooks = True
 
-prepare_db_for_release = False
+prepare_db_for_release = True
 if prepare_db_for_release:
     prepare_foreign_meanings = True
     prepare_grammar_db = True

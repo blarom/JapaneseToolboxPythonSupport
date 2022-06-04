@@ -1,7 +1,7 @@
 #!/usr/bin/python -tt
 
 # Windows Powershell grep:
-# Select-String -Path .\JMdict.xml -Pattern "CNET" -Context 4,4
+# Select-String -Path .\JMDict.xml.xml -Pattern "CNET" -Context 4,4
 
 import re
 import openpyxl

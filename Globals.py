@@ -11,10 +11,16 @@ def write_to_file(rwa, filename, content):
     fh.write(content)
     fh.close()
 
+mode = 0 # = Linux, 1 = Windows
 
-MASTER_DIR = 'C:/Users/Bar/Dropbox/Japanese'
-OUTPUT_DIR = 'C:/Projects/Workspace/JapaneseToolboxPythonSupport'
-JAPAGRAM_ASSETS_DIR = 'C:/Projects/Workspace/Japagram/app/src/main/assets'
+if mode == 0:
+    MASTER_DIR = '/home/barlr/Dropbox/Japanese'
+    OUTPUT_DIR = '/home/barlr/PycharmProjects/JapaneseToolboxPythonSupport'
+    JAPAGRAM_ASSETS_DIR = '/home/barlr/Android/Projects/Japagram/app/src/main/assets'
+else:
+    MASTER_DIR = 'C:/Users/Bar/Dropbox/Japanese'
+    OUTPUT_DIR = 'C:/Projects/Workspace/JapaneseToolboxPythonSupport'
+    JAPAGRAM_ASSETS_DIR = 'C:/Projects/Workspace/Japagram/app/src/main/assets'
 
 MAX_VERB_CONG_COL = "GK"
 DELIMITER = ";"
