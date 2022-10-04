@@ -35,7 +35,7 @@ def main():
     # region Filling the foreign words list
     words = []
     reached_first_entry = False
-    with open("JMDict.xml", encoding='utf-8') as infile:
+    with open(f'{Globals.OUTPUT_DIR}/JMDict.xml', encoding='utf-8') as infile:
         for line in infile:
 
             if "<entry>" in line:

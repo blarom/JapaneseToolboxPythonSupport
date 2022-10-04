@@ -11,16 +11,20 @@ def write_to_file(rwa, filename, content):
     fh.write(content)
     fh.close()
 
-mode = 0 # = Linux, 1 = Windows
+
+mode = 1  # = Linux, 1 = Windows
 
 if mode == 0:
     MASTER_DIR = '/home/barlr/Dropbox/Japanese'
     OUTPUT_DIR = '/home/barlr/PycharmProjects/JapaneseToolboxPythonSupport'
     JAPAGRAM_ASSETS_DIR = '/home/barlr/Android/Projects/Japagram/app/src/main/assets'
 else:
-    MASTER_DIR = 'C:/Users/Bar/Dropbox/Japanese'
-    OUTPUT_DIR = 'C:/Projects/Workspace/JapaneseToolboxPythonSupport'
-    JAPAGRAM_ASSETS_DIR = 'C:/Projects/Workspace/Japagram/app/src/main/assets'
+    # MASTER_DIR = 'C:/Users/Bar/Dropbox/Japanese'
+    # OUTPUT_DIR = 'C:/Projects/Workspace/JapaneseToolboxPythonSupport'
+    # JAPAGRAM_ASSETS_DIR = 'C:/Projects/Workspace/Japagram/app/src/main/assets'
+    MASTER_DIR = 'C:/Users/barla/Dropbox/Japanese'
+    OUTPUT_DIR = 'D:/Projects/Workspace/JapaneseToolboxPythonSupport'
+    JAPAGRAM_ASSETS_DIR = 'D:/Projects/Workspace/Japagram/app/src/main/assets'
 
 MAX_VERB_CONG_COL = "GK"
 DELIMITER = ";"
@@ -317,7 +321,9 @@ def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row=F
     content_lines = []
     index = start_row
     while not isLastRow(ws, index):
-        line = "|".join([str(ws.cell(row=index, column=col).value) if ws.cell(row=index, column=col).value is not None else "" for col in range(start_col, end_col + 1)])
+        line = "|".join(
+            [str(ws.cell(row=index, column=col).value) if ws.cell(row=index, column=col).value is not None else "" for
+             col in range(start_col, end_col + 1)])
         if line: content_lines.append(line)
         index += 1
         if only_first_row: break
@@ -326,9 +332,12 @@ def create_csv_from_worksheet(ws, csv_name, start_col, end_col, only_first_row=F
 
 
 def isLastRow(sheet, index):
-    this_row_is_empty = all(not item for item in [sheet.cell(row=index, column=col).value for col in list(range(1, 10)) + list(range(41, 50))])
-    next_row_is_empty = all(not item for item in [sheet.cell(row=index + 1, column=col).value for col in list(range(1, 10)) + list(range(41, 50))])
-    col10_is_empty_from_next_row = all(not item for item in [sheet.cell(row=row, column=11).value for row in range(index + 1, index + 31)])
+    this_row_is_empty = all(not item for item in [sheet.cell(row=index, column=col).value for col in
+                                                  list(range(1, 10)) + list(range(41, 50))])
+    next_row_is_empty = all(not item for item in [sheet.cell(row=index + 1, column=col).value for col in
+                                                  list(range(1, 10)) + list(range(41, 50))])
+    col10_is_empty_from_next_row = all(
+        not item for item in [sheet.cell(row=row, column=11).value for row in range(index + 1, index + 31)])
     return this_row_is_empty and next_row_is_empty and col10_is_empty_from_next_row
 
 
@@ -337,7 +346,9 @@ def get_cell_value(value):
 
 
 def isIrrelevantRow(sheet, index):
-    return all(not item for item in [sheet.cell(row=index, column=col).value for col in [TYPES_COL_ROMAJI, TYPES_COL_KANJI, TYPES_COL_ALTS, TYPES_COL_COMMON, TYPES_COL_KW_JAP]])
+    return all(not item for item in [sheet.cell(row=index, column=col).value for col in
+                                     [TYPES_COL_ROMAJI, TYPES_COL_KANJI, TYPES_COL_ALTS, TYPES_COL_COMMON,
+                                      TYPES_COL_KW_JAP]])
 
 
 def name(text):
